@@ -59,6 +59,28 @@ def _lineage(phase: str, inputs: List[str]) -> Dict[str, Any]:
     }
 
 
+def _observed_at(case: Dict[str, Any], fallback: str) -> tuple:
+    """Hub-required tz-aware observed_at from date_local/time_local.
+
+    Historical cases carry year / year-month / full-date precision; the
+    timestamp is floored to the period start (AST, UTC-4) and the true
+    precision is preserved alongside it.
+    """
+    import re
+
+    date = str(case.get("date_local") or "")
+    if re.fullmatch(r"\d{4}", date):
+        date, precision = f"{date}-01-01", "year"
+    elif re.fullmatch(r"\d{4}-\d{2}", date):
+        date, precision = f"{date}-01", "month"
+    elif re.fullmatch(r"\d{4}-\d{2}-\d{2}", date):
+        precision = "day"
+    else:
+        return fallback, "unknown"
+    time = str(case.get("time_local") or "00:00")
+    return f"{date}T{time}:00-04:00", precision
+
+
 def build_streams(cases: List[Dict[str, Any]], now: str) -> Dict[str, List[Dict[str, Any]]]:
     sources: Dict[str, Dict[str, Any]] = {}
     entities: Dict[str, Dict[str, Any]] = {}
@@ -163,10 +185,14 @@ def build_streams(cases: List[Dict[str, Any]], now: str) -> Dict[str, List[Dict[
 
         # --- observation ---
         obs_id = _fid("obs", "case", case_key)
+        observed_at, date_precision = _observed_at(case, created)
         observations[obs_id] = {
             "observation_id": obs_id,
             "entity_id": ent_id,
             "source_id": source_id,
+            "observation_type": "uap_case",
+            "observed_at": observed_at,
+            "date_precision": date_precision,
             "date_local": case.get("date_local"),
             "time_local": case.get("time_local"),
             "location_name": case.get("location_name"),

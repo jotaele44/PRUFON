@@ -1,0 +1,78 @@
+=== OVNIS acceptance gate 2026-07-02T22:45:51Z ===
+--- py_compile scripts ---
+py_compile: OK
+--- validate_case_ledgers.py ---
+# OVNIS ledger validation report
+
+Rows checked: 471
+Ledgers checked: 2
+Errors: 0
+Warnings: 1
+
+## Warnings
+- jsonschema not installed; skipped full JSON Schema validation
+validate_case_ledgers rc=0
+--- pip install pytest jsonschema ---
+WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv
+--- pytest -q ---
+....................................                                     [100%]
+36 passed in 0.10s
+pytest rc=0
+--- federation_export.py --mode production ---
+wrote /home/user/ovnis-pr/exports/federation/manifest.json — {'sources': 278, 'entities': 758, 'relationships': 563, 'observations': 470}
+export rc=0
+--- manifest check ---
+manifest.json EXISTS
+total 1308
+drwxr-xr-x 2 root root   4096 Jul  2 22:46 .
+drwxr-xr-x 3 root root   4096 Jul  2 22:46 ..
+-rw-r--r-- 1 root root 443564 Jul  2 22:46 entities.jsonl
+-rw-r--r-- 1 root root   1314 Jul  2 22:46 manifest.json
+-rw-r--r-- 1 root root 355135 Jul  2 22:46 observations.jsonl
+-rw-r--r-- 1 root root 361916 Jul  2 22:46 relationships.jsonl
+-rw-r--r-- 1 root root 157293 Jul  2 22:46 sources.jsonl
+--- master/synthetic counts ---
+{'master_case_rows': 470, 'synthetic_or_placeholder_rows': 0}
+--- manifest.json ---
+{
+  "created_at": "2026-07-02T22:46:13Z",
+  "export_contract_version": "1.0.0",
+  "extracted_at": "2026-07-02T22:46:13Z",
+  "federation": {
+    "hub_parent": "thehub-pr",
+    "producer_repo": "ovnis-pr"
+  },
+  "files": [
+    {
+      "filename": "sources.jsonl",
+      "record_count": 278,
+      "schema_id": "federation_source.schema.json",
+      "sha256": "6effaede84079fccbd8c0fb1329f0e21a4cede66b1792d7086bdf348456da6de",
+      "stream": "sources"
+    },
+    {
+      "filename": "entities.jsonl",
+      "record_count": 758,
+      "schema_id": "federation_entity.schema.json",
+      "sha256": "ab168bbdb2559d123a5ff96c1b24d131204160c8fdbfa71083a13449d943581d",
+      "stream": "entities"
+    },
+    {
+      "filename": "relationships.jsonl",
+      "record_count": 563,
+      "schema_id": "federation_relationship.schema.json",
+      "sha256": "b04cf77c1d134a6fba1f7252d0f56e6c25816177100ff7d86951cd31f563fb04",
+      "stream": "relationships"
+    },
+    {
+      "filename": "observations.jsonl",
+      "record_count": 470,
+      "schema_id": "federation_observation.schema.json",
+      "sha256": "556821a078761af65f051db88c25eb3a76610874b6551307c432c1db35d8487d",
+      "stream": "observations"
+    }
+  ],
+  "mode": "production",
+  "package_id": "pkg_698815477e425c9e1c08029697599890",
+  "producer": "ovnis-pr"
+}
