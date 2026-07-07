@@ -115,3 +115,4 @@ dashboard/dist/
 desktop/.setup-complete
 dist-desktop/
 build/
+dashboard/export-standalone/

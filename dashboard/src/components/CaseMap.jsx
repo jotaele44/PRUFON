@@ -6,6 +6,12 @@ import maplibregl from 'maplibre-gl'
 // skywatcher template — note the h-full container (not absolute inset-0), since
 // maplibre-gl.css sets .maplibregl-map{position:relative} and would otherwise
 // override `absolute` and collapse the height to 0.
+// Resolve against the configured base so it works in the normal build
+// (served from '/') and the VITE_OFFLINE single-file file:// export (base './').
+const MUNICIPIOS_URL = new URL('geo/pr_municipios.geojson', document.baseURI).href
+
+// Municipality outlines ship with the app (public/geo/) and sit under the
+// raster tiles, so the map still shows Puerto Rico geography when offline.
 const OSM_STYLE = {
   version: 8,
   sources: {
@@ -15,9 +21,12 @@ const OSM_STYLE = {
       tileSize: 256,
       attribution: '© OpenStreetMap contributors',
     },
+    municipios: { type: 'geojson', data: MUNICIPIOS_URL },
   },
   layers: [
     { id: 'bg', type: 'background', paint: { 'background-color': '#0b1220' } },
+    { id: 'municipios-fill', type: 'fill', source: 'municipios', paint: { 'fill-color': '#101d33', 'fill-opacity': 0.9 } },
+    { id: 'municipios-line', type: 'line', source: 'municipios', paint: { 'line-color': '#33517b', 'line-width': 0.8 } },
     { id: 'osm', type: 'raster', source: 'osm', paint: { 'raster-opacity': 0.85, 'raster-saturation': -0.3 } },
   ],
 }
@@ -50,7 +59,9 @@ export default function CaseMap({ geojson, onSelect }) {
     mapRef.current = map
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
 
-    map.on('load', () => {
+    // 'style.load' instead of 'load': the latter waits for raster tiles,
+    // which never resolve offline, and the data layer would never appear.
+    map.on('style.load', () => {
       map.addSource('cases', { type: 'geojson', data: dataRef.current || EMPTY })
       map.addLayer({
         id: 'cases-dot', type: 'circle', source: 'cases',
