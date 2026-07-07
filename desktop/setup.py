@@ -21,6 +21,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from desktop import config  # noqa: E402
 from desktop.config import DIST_DIR, FRONTEND_DIR, REPO_ROOT, REQUIREMENT_FILES  # noqa: E402
 
 VENV_DIR = REPO_ROOT / ".venv"
@@ -42,8 +43,11 @@ def is_complete() -> bool:
     return MARKER.exists() and venv_python().exists() and (DIST_DIR / "index.html").exists()
 
 
+MIN_PYTHON = (3, 10)
+
+
 def setup_python() -> None:
-    if sys.version_info < (3, 10):
+    if sys.version_info < MIN_PYTHON:
         raise SystemExit(f"Python 3.10+ required, found {sys.version.split()[0]}")
     if not venv_python().exists():
         print(f"Creating virtual environment at {VENV_DIR} …")
@@ -54,14 +58,18 @@ def setup_python() -> None:
     for req in REQUIREMENT_FILES:
         install += ["-r", str(req)]
     run(install)
+    # Repos whose backend imports the repo's own package list extra pip specs
+    # (e.g. an editable install with extras) in desktop/config.py.
+    extra = list(getattr(config, "EXTRA_PIP_SPECS", []))
+    if extra:
+        run([str(venv_python()), "-m", "pip", "install", "--quiet", *extra])
 
 
 def setup_frontend() -> None:
     npm = shutil.which("npm")
     if npm is None:
         raise SystemExit(
-            "npm not found. Install Node.js (https://nodejs.org) and re-run "
-            "python desktop/setup.py"
+            "npm not found. Install Node.js (https://nodejs.org) and re-run python desktop/setup.py"
         )
     env = dict(os.environ)
     # Empty base makes the SPA call its API on the same origin it was served from.
