@@ -26,7 +26,9 @@ _PASSTHROUGH_PREFIXES = ("/docs", "/redoc", "/openapi")
 def _index() -> Path:
     index = DIST_DIR / "index.html"
     if not index.is_file():
-        raise RuntimeError(f"Frontend build not found at {DIST_DIR}. Run: python desktop/setup.py")
+        raise RuntimeError(
+            f"Frontend build not found at {DIST_DIR}. Run: python desktop/setup.py"
+        )
     return index
 
 
