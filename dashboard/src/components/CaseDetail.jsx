@@ -3,10 +3,11 @@ import {
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { tierBadge } from '@/lib/format'
-import { confidenceTone, locString, hasCoords } from '@/lib/ovnis-format'
+import { confidenceTone, locString, hasCoords, sourceFamilyMeta } from '@/lib/ovnis-format'
 import { cn } from '@/lib/utils'
 
 export default function CaseDetail({ case: c, onClose }) {
+  const agency = c ? sourceFamilyMeta(c.source_family) : null
   return (
     <Sheet open={!!c} onOpenChange={(o) => !o && onClose?.()}>
       <SheetContent className="bg-slate-950 border-slate-800 text-slate-200 w-full sm:max-w-md overflow-y-auto">
@@ -33,6 +34,11 @@ export default function CaseDetail({ case: c, onClose }) {
               </Field>
               <Field label="Evidence type">{c.evidence_type ?? '—'}</Field>
               <Field label="Source">{c.source ?? '—'}</Field>
+              {agency && (
+                <Field label="Agency involvement">
+                  <Badge variant="outline" className={cn('text-[10px]', agency.badge)}>{agency.label}</Badge>
+                </Field>
+              )}
               {c.contradictions_or_gaps ? (
                 <Field label="Contradictions / gaps"><span className="text-amber-300/90">{c.contradictions_or_gaps}</span></Field>
               ) : null}
