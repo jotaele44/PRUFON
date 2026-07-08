@@ -15,7 +15,7 @@ import json
 from collections.abc import Iterator
 from pathlib import Path
 
-from ..models import MaintenanceFinding
+from prii_maintenance import MaintenanceFinding
 
 LEDGER_KEYS = ("master_cases", "candidate_cases")
 _PROVENANCE_FIELDS = ("source_ref", "source_url", "source_citation", "source_tier")

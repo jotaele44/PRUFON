@@ -1,20 +1,10 @@
-"""Deterministic, audit-first maintenance/audit layer for ovnis-pr.
+"""Repo-specific maintenance adapter for ovnis-pr.
 
-Vendored per-repo (independent repos, no shared dependency). The shared module
-set — models, state, detect, corrections, quarantine, report — is generic;
-``adapters/local.py`` holds the repo-specific checks. Run via
-``python3 scripts/run_maintenance.py --repo ovnis-pr --mode audit``.
+The generic maintenance core (models/state/detect/corrections/quarantine/report/
+runner) now lives in the shared `prii_maintenance` package
+(thehub-pr/packages/prii_maintenance, pinned via federation.json's setup
+command). Only `adapters/local.py` — the ovnis-specific checks — stays
+vendored here; it is passed into
+`prii_maintenance.run_maintenance(..., local_checks=local.run_checks)`.
+Run via ``python3 scripts/run_maintenance.py --repo ovnis-pr --mode audit``.
 """
-from __future__ import annotations
-
-from .models import MAINTENANCE_VERSION, MaintenanceFinding, MaintenanceReport
-from .report import REPORT_RELPATH
-from .runner import run_maintenance
-
-__all__ = [
-    "MAINTENANCE_VERSION",
-    "MaintenanceFinding",
-    "MaintenanceReport",
-    "REPORT_RELPATH",
-    "run_maintenance",
-]
