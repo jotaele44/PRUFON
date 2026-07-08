@@ -74,8 +74,12 @@ export default function CaseGrid({ cases = [], selectedId, onSelect }) {
                       {locString(c)}
                     </span>
                   </TableCell>
-                  <TableCell>
-                    {agency && <Badge variant="outline" className={cn('text-[10px] whitespace-nowrap', agency.badge)}>{agency.label}</Badge>}
+                  <TableCell className="max-w-[90px]">
+                    {agency && (
+                      <Badge variant="outline" title={agency.label} className={cn('text-[10px] max-w-full truncate block', agency.badge)}>
+                        {agency.label}
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell><Badge variant="outline" className={cn('text-[10px]', tierBadge(c.evidence_tier))}>{c.evidence_tier}</Badge></TableCell>
                 </TableRow>
