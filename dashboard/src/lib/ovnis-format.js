@@ -21,3 +21,19 @@ export const hasCoords = (c) => {
   const l = c.location || {}
   return l.lat != null && l.lon != null
 }
+
+// Federal/military agency involvement (source_family), e.g. "USAF", "AARO", "FAA;
+// PR Police/FURA", "none". Ported from the reference HTML mockup's source-pill /
+// FOIA-row-highlight styling, adapted to this field since the ledger has no
+// NUFORC/CIA-style source taxonomy.
+export function sourceFamilyMeta(family) {
+  if (!family || family === 'none') return null
+  const military = /military|usaf|navy|army|uscg/i.test(family)
+  return {
+    label: family,
+    badge: military
+      ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+      : 'bg-sky-500/15 text-sky-300 border-sky-500/30',
+    rowTint: military ? 'bg-amber-500/5' : 'bg-sky-500/5',
+  }
+}

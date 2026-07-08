@@ -8,7 +8,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select'
 import { tierBadge } from '@/lib/format'
-import { confidenceTone, locString, hasCoords } from '@/lib/ovnis-format'
+import { confidenceTone, locString, hasCoords, sourceFamilyMeta } from '@/lib/ovnis-format'
 import { cn } from '@/lib/utils'
 import { MapPinOff } from 'lucide-react'
 
@@ -49,27 +49,42 @@ export default function CaseGrid({ cases = [], selectedId, onSelect }) {
               <TableHead className="text-slate-400">Case</TableHead>
               <TableHead className="text-slate-400">Date</TableHead>
               <TableHead className="text-slate-400">Location</TableHead>
+              <TableHead className="text-slate-400">Agency</TableHead>
               <TableHead className="text-slate-400">Tier</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((c) => (
-              <TableRow
-                key={c.case_id}
-                onClick={() => onSelect?.(c)}
-                className={cn('cursor-pointer border-slate-800', selectedId === c.case_id ? 'bg-violet-500/10' : 'hover:bg-slate-800/50')}
-              >
-                <TableCell className="text-xs text-slate-200 whitespace-nowrap">{c.case_id}</TableCell>
-                <TableCell className="text-xs text-slate-400 whitespace-nowrap">{c.date_raw}</TableCell>
-                <TableCell className="text-xs text-slate-300 max-w-[160px] truncate">
-                  <span className="inline-flex items-center gap-1">
-                    {!hasCoords(c) && <MapPinOff className="h-3 w-3 text-slate-600 shrink-0" title="no coordinates" />}
-                    {locString(c)}
-                  </span>
-                </TableCell>
-                <TableCell><Badge variant="outline" className={cn('text-[10px]', tierBadge(c.evidence_tier))}>{c.evidence_tier}</Badge></TableCell>
-              </TableRow>
-            ))}
+            {rows.map((c) => {
+              const agency = sourceFamilyMeta(c.source_family)
+              return (
+                <TableRow
+                  key={c.case_id}
+                  onClick={() => onSelect?.(c)}
+                  className={cn(
+                    'cursor-pointer border-slate-800',
+                    selectedId === c.case_id ? 'bg-violet-500/10' : agency?.rowTint,
+                    selectedId !== c.case_id && 'hover:bg-slate-800/50',
+                  )}
+                >
+                  <TableCell className="text-xs text-slate-200 whitespace-nowrap">{c.case_id}</TableCell>
+                  <TableCell className="text-xs text-slate-400 whitespace-nowrap">{c.date_raw}</TableCell>
+                  <TableCell className="text-xs text-slate-300 max-w-[160px] truncate">
+                    <span className="inline-flex items-center gap-1">
+                      {!hasCoords(c) && <MapPinOff className="h-3 w-3 text-slate-600 shrink-0" title="no coordinates" />}
+                      {locString(c)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="max-w-[90px]">
+                    {agency && (
+                      <Badge variant="outline" title={agency.label} className={cn('text-[10px] max-w-full truncate block', agency.badge)}>
+                        {agency.label}
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell><Badge variant="outline" className={cn('text-[10px]', tierBadge(c.evidence_tier))}>{c.evidence_tier}</Badge></TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </div>
