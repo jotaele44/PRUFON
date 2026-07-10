@@ -1,5 +1,11 @@
 # OVNIS Dashboard (Ovnis-PR)
 
+> **Diagnostic-only surface (ADR 0001, Phase 2).** This dashboard is a
+> development and diagnostic tool for this producer only. The supported product
+> surface for the PRII federation is the hub app
+> (`thehub-pr/server/frontend`), which renders this producer's data alongside
+> the other engines. See `thehub-pr/docs/adr/0001-federated-engines-single-hub.md`.
+
 Local-only React dashboard for the OVNIS UAP sighting registry. Same federation
 frontend process — Vite + React (JSX) + Tailwind + shadcn/ui + react-query,
 Base44 auth stripped. **MapLibre GL** renders the sighting map.
