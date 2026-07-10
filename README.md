@@ -20,6 +20,37 @@ Its federation alias is `ovnis-pr`. It should preserve case provenance, chronolo
 | Primary function | Historical case corpus and review pipeline |
 | Jurisdiction focus | Puerto Rico |
 
+## Setup / Development
+
+Requires **Python 3.10+** (CI's `validate` job tests 3.10–3.12; the `OVNIS CI`
+job runs on 3.12). This repo is a flat-layout application — modules run in place,
+there is no package install — so setup is just the runtime/test dependencies.
+
+```bash
+git clone https://github.com/jotaele44/ovnis-pr.git
+cd ovnis-pr
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Runtime + hub-callable deps are pinned in requirements.txt (federation.json
+# `setup` installs from it). CI also needs the backend deps to run the suite:
+python -m pip install -r requirements.txt httpx -r server/backend/requirements.txt
+```
+
+> `requirements.txt` carries the shared federation packages (`prii-maintenance`,
+> `prii-export-utils`) pinned to hub commit SHAs, so installing it needs network
+> access.
+
+Run the checks CI runs:
+
+```bash
+python3 scripts/validate_case_ledgers.py            # ledger integrity
+python -m pytest -q                                 # unit tests
+python3 scripts/federation_export.py --mode test    # canonical export smoke
+```
+
+For the double-click desktop app, see [`desktop/README.md`](desktop/README.md).
+
 ## Operating doctrine
 
 | Rule | Requirement |
