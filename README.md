@@ -4,6 +4,12 @@
 
 Its federation alias is `ovnis-pr`. It should preserve case provenance, chronology, location references, witness/source tiers, document lineage, and review state for downstream analysis in [`thehub-pr`](https://github.com/jotaele44/thehub-pr) and analytical consumers.
 
+> **Diagnostic-only surface (ADR 0001, Phase 2).** This repo's dashboard is a
+> development and diagnostic tool for this producer only. The supported product
+> surface for the PRII federation is the hub app
+> (`thehub-pr/server/frontend`), which renders this producer's data alongside
+> the other engines. See `thehub-pr/docs/adr/0001-federated-engines-single-hub.md`.
+
 ## Federation role
 
 | Field | Value |
@@ -18,7 +24,7 @@ Its federation alias is `ovnis-pr`. It should preserve case provenance, chronolo
 
 Requires **Python 3.10+** (CI's `validate` job tests 3.10–3.12; the `OVNIS CI`
 job runs on 3.12). This repo is a flat-layout application — modules run in place,
-there is no package install — so setup is just the test/validation dependencies.
+there is no package install — so setup is just the runtime/test dependencies.
 
 ```bash
 git clone https://github.com/jotaele44/ovnis-pr.git
@@ -26,14 +32,14 @@ cd ovnis-pr
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Install the same dependency set CI uses (matches federation.json `setup`):
-python -m pip install pytest jsonschema httpx -r server/backend/requirements.txt \
-  "prii-maintenance @ git+https://github.com/jotaele44/thehub-pr.git@3c9e51e3de406f8455605a06fabd4823452d9b63#subdirectory=packages/prii_maintenance" \
-  "prii-export-utils @ git+https://github.com/jotaele44/thehub-pr.git@c007a728910128efebcda79bdbe6b9b33212551e#subdirectory=packages/prii_export_utils"
+# Runtime + hub-callable deps are pinned in requirements.txt (federation.json
+# `setup` installs from it). CI also needs the backend deps to run the suite:
+python -m pip install -r requirements.txt httpx -r server/backend/requirements.txt
 ```
 
-> `prii-maintenance` and `prii-export-utils` are shared federation packages pulled
-> from the hub repo at pinned commits; installing them needs network access.
+> `requirements.txt` carries the shared federation packages (`prii-maintenance`,
+> `prii-export-utils`) pinned to hub commit SHAs, so installing it needs network
+> access.
 
 Run the checks CI runs:
 
