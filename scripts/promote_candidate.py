@@ -28,6 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -210,7 +211,12 @@ def main(argv: list[str] | None = None) -> int:
         default=None,
         help="Optional explicit master case_id; otherwise the next PRUAP-NNNN is minted.",
     )
-    parser.add_argument("--now", default="2026-07-12")
+    parser.add_argument(
+        "--now",
+        default=date.today().isoformat(),
+        help="Promotion stamp date (YYYY-MM-DD); defaults to the current run date. "
+             "Override explicitly for deterministic tests.",
+    )
     args = parser.parse_args(argv)
 
     try:
