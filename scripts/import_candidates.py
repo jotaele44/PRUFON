@@ -43,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from dedupe_candidates import iter_jsonl, match_score  # noqa: E402
 from score_candidates import score_row  # noqa: E402
+from validate_case_ledgers import REQUIRED as REQUIRED_FIELDS  # noqa: E402
 
 # Full ordered schema key set, mirroring the existing ledger rows.
 FULL_KEYS = [
@@ -144,11 +145,41 @@ def route_row(
     return target, ordered
 
 
-def write_ledger(path: Path, rows: list[dict[str, Any]], *, append: bool) -> int:
-    """Write ``rows`` to ``path`` as JSONL. Idempotent on record_id when appending."""
+def missing_required(row: dict[str, Any]) -> list[str]:
+    """Return the REQUIRED schema fields that are absent or empty on ``row``.
+
+    ``normalize`` defaults the structural fields (record_id, source_url, tiers, …)
+    but content fields — date_local, location_name, description — come straight
+    from the feed with no default. A row missing any REQUIRED field would append
+    schema-invalid JSONL that ``validate_case_ledgers.py`` then rejects, so such
+    rows are quarantined before routing rather than fabricating placeholder values.
+    """
+    return [k for k in REQUIRED_FIELDS if not str(row.get(k) or "").strip()]
+
+
+def existing_record_ids(paths: list[Path]) -> set[str]:
+    """Union of ``record_id`` values already present across ``paths`` (missing ok)."""
+    ids: set[str] = set()
+    for p in paths:
+        if p.exists():
+            for line in p.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    ids.add(str(json.loads(line).get("record_id", "")))
+    return ids
+
+
+def write_ledger(
+    path: Path, rows: list[dict[str, Any]], *, append: bool, reserved: set[str] | None = None
+) -> int:
+    """Write ``rows`` to ``path`` as JSONL. Idempotent on record_id when appending.
+
+    ``reserved`` pre-seeds the seen-set with record_ids already committed to *other*
+    canonical ledgers, so a rerun that re-routes a record to a different ledger cannot
+    create a duplicate id across ledgers (which the global validator would reject).
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     existing_lines: list[str] = []
-    seen: set[str] = set()
+    seen: set[str] = set(reserved or ())
     if append and path.exists():
         for line in path.read_text(encoding="utf-8").splitlines():
             if line.strip():
@@ -188,9 +219,16 @@ def run(
 
     routed: dict[str, list[dict[str, Any]]] = {k: [] for k in LEDGER_FILES}
     report_rows: list[dict[str, Any]] = []
+    quarantined: list[dict[str, Any]] = []
 
     for i, raw in enumerate(feed, start=1):
         normalized = normalize(raw, index=i, now=now)
+        # Schema-gate before routing: never let a row missing a REQUIRED field reach
+        # the ledgers (with --apply that would append data the validator rejects).
+        gaps = missing_required(normalized)
+        if gaps:
+            quarantined.append({"record_id": normalized.get("record_id"), "missing": gaps})
+            continue
         target, row = route_row(
             normalized,
             masters,
@@ -210,6 +248,15 @@ def run(
             "case_confidence": row["case_confidence"],
         })
 
+    # When appending to the canonical ledgers, reserve every record_id already
+    # committed to ANY aux/candidate ledger so a re-routed record can't be duplicated
+    # across ledgers (the repo validator enforces globally-unique ids). Also carry ids
+    # written earlier in this same run forward to later targets.
+    data_root = master_path.parents[1]
+    reserved: set[str] = (
+        existing_record_ids([data_root / fn for fn in LEDGER_FILES.values()]) if apply else set()
+    )
+
     counts: dict[str, int] = {}
     for key, rows in routed.items():
         if not rows:
@@ -217,10 +264,11 @@ def run(
             continue
         if apply:
             # data root = parent of data/master/ ; aux ledgers live at data/ root.
-            target_path = master_path.parents[1] / LEDGER_FILES[key]
+            target_path = data_root / LEDGER_FILES[key]
         else:
             target_path = out_dir / Path(LEDGER_FILES[key]).name
-        counts[key] = write_ledger(target_path, rows, append=apply)
+        counts[key] = write_ledger(target_path, rows, append=apply, reserved=reserved)
+        reserved |= {str(r.get("record_id", "")) for r in rows}
 
     if report_path is not None and report_rows:
         report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -234,6 +282,7 @@ def run(
         "feed_rows": len(feed),
         "routed": counts,
         "report_rows": report_rows,
+        "quarantined": quarantined,
         "apply": apply,
         "out_dir": str(out_dir),
     }
@@ -277,6 +326,8 @@ def main(argv: list[str] | None = None) -> int:
     print(f"OVNIS candidate intake: {summary['feed_rows']} feed rows -> {dest}")
     for key, filename in LEDGER_FILES.items():
         print(f"  {filename:<34} {summary['routed'].get(key, 0)}")
+    if summary["quarantined"]:
+        print(f"  {'(quarantined: missing required)':<34} {len(summary['quarantined'])}")
     if args.report:
         print(f"Routing report: {args.report}")
     print("Master ledger untouched (read-only).")
