@@ -1,14 +1,14 @@
-source_id,name,language,source_family,reliability_default,scrape_method,active,notes
-SRC-0000,Placeholder Source,unknown,placeholder,T4,manual,no,Retained placeholder to keep schema wiring; superseded by SRC-0001+ real families.
-SRC-0001,U.S. Navy operational records,en,U.S. Navy,T1,manual,yes,Armed Guard logs/USO contacts and Navy operational reports present in master corpus.
-SRC-0002,Policia de Puerto Rico / FURA,es,PR Police/FURA,T2,manual,yes,Fuerzas Unidas de Rapida Accion maritime/aerial police reports; bilingual field notes.
-SRC-0003,U.S. Air Force / NICAP-referenced USAF reports,en,USAF,T2,manual,yes,USAF pilot and base observations; several routed via NICAP archive references.
-SRC-0004,NASA mission imagery analyses,en,NASA,T3,manual,yes,Shuttle/mission video anomaly analyses (e.g., STS-80 Caribbean pass).
-SRC-0005,FAA pilot reports / ATC acknowledgements,en,FAA,T2,manual,yes,FAA-acknowledged airline pilot sightings and airspace reports.
-SRC-0006,AARO (All-domain Anomaly Resolution Office),en,AARO,T2,manual,yes,DoD anomaly resolution case references, often cross-listed with NUFORC.
-SRC-0007,U.S. Customs and Border Protection,en,CBP,T1,foia,yes,CBP DHC-8 FLIR/aircraft sensor captures (e.g., Aguadilla thermal video).
-SRC-0008,U.S. Army airmen / observer reports,en,U.S. Army,T3,manual,yes,Army aircrew and ground-observer sightings in the master corpus.
-SRC-0009,U.S. Coast Guard cutter logs,en,USCG,T3,manual,yes,USCG cutter underwater-contact and patrol reports near Puerto Rico.
-SRC-0010,National UFO Reporting Center (NUFORC),en,reporting_archive,T4,api,yes,Public witness-report archive; secondary provenance, used for cross-reference.
-SRC-0011,NICAP archive,en,reporting_archive,T4,manual,yes,Historical investigative archive; secondary provenance for mid-century cases.
-SRC-0012,Inexplicata / Institute of Hispanic Ufology,bilingual,reporting_archive,T4,manual,yes,Scott Corrales / Hispanic ufology archive; Spanish-language case lineage.
+source_id,name,language,source_family,reliability_default,scrape_method,active,retrieval_cadence,robots_policy,notes
+SRC-0000,Placeholder Source,unknown,placeholder,T4,manual,no,none,not_applicable,Retained placeholder to keep schema wiring; superseded by SRC-0001+ real families.
+SRC-0001,U.S. Navy operational records,en,U.S. Navy,T1,manual,yes,quarterly,respect,Armed Guard logs/USO contacts and Navy operational reports present in master corpus.
+SRC-0002,Policia de Puerto Rico / FURA,es,PR Police/FURA,T2,manual,yes,quarterly,respect,Fuerzas Unidas de Rapida Accion maritime/aerial police reports; bilingual field notes.
+SRC-0003,U.S. Air Force / NICAP-referenced USAF reports,en,USAF,T2,manual,yes,quarterly,respect,USAF pilot and base observations; several routed via NICAP archive references.
+SRC-0004,NASA mission imagery analyses,en,NASA,T3,manual,yes,quarterly,respect,"Shuttle/mission video anomaly analyses (e.g., STS-80 Caribbean pass)."
+SRC-0005,FAA pilot reports / ATC acknowledgements,en,FAA,T2,manual,yes,quarterly,respect,FAA-acknowledged airline pilot sightings and airspace reports.
+SRC-0006,AARO (All-domain Anomaly Resolution Office),en,AARO,T2,manual,yes,quarterly,respect,"DoD anomaly resolution case references, often cross-listed with NUFORC."
+SRC-0007,U.S. Customs and Border Protection,en,CBP,T1,foia,yes,on_foia_release,foia_only,"CBP DHC-8 FLIR/aircraft sensor captures (e.g., Aguadilla thermal video)."
+SRC-0008,U.S. Army airmen / observer reports,en,U.S. Army,T3,manual,yes,quarterly,respect,Army aircrew and ground-observer sightings in the master corpus.
+SRC-0009,U.S. Coast Guard cutter logs,en,USCG,T3,manual,yes,quarterly,respect,USCG cutter underwater-contact and patrol reports near Puerto Rico.
+SRC-0010,National UFO Reporting Center (NUFORC),en,reporting_archive,T4,api,yes,weekly,api_terms,"Public witness-report archive; secondary provenance, used for cross-reference."
+SRC-0011,NICAP archive,en,reporting_archive,T4,manual,yes,annual,respect,Historical investigative archive; secondary provenance for mid-century cases.
+SRC-0012,Inexplicata / Institute of Hispanic Ufology,bilingual,reporting_archive,T4,manual,yes,annual,respect,Scott Corrales / Hispanic ufology archive; Spanish-language case lineage.
