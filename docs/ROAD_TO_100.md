@@ -49,18 +49,41 @@ Of the remaining gap, the **code** track is now effectively complete; what is le
       `gap_note`. Placeholder `-0000` rows retained.
 - [x] Offline test coverage: `tests/test_import_candidates.py` (+ fixture feed),
       runnable under pytest **and** via bare `python3`.
+- [x] **Reviewed intake GitHub Action** (`.github/workflows/candidate-intake.yml`):
+      `workflow_dispatch` with a `feed` input runs `import_candidates.py --apply`,
+      uploads `reports/intake/routing_report.csv` as an artifact, and opens a PR with
+      the candidate/aux-ledger changes via `peter-evans/create-pull-request`. The PR is
+      path-scoped so `data/master/` can never be included — master is never touched.
+- [x] **Reviewed promotion helper** (`scripts/promote_candidate.py`): moves ONE reviewed
+      candidate row from `candidate_cases.jsonl` into `master_cases.jsonl`, gated behind an
+      explicit `--record-id <id>` **and** `--i-have-reviewed`. It stamps promotion provenance,
+      re-runs `core_validate` on the transformed row before appending, and refuses on an
+      invalid or placeholder row. Master stays append-only; candidate lineage is preserved.
+- [x] **Registry cadence/robots columns**: `source_registry.csv` now carries
+      `retrieval_cadence` and `robots_policy` for every real source family (placeholder
+      row retained), pre-wiring live-scraping governance.
+- [x] Offline test coverage for promotion: `tests/test_promote_candidate.py`, runnable
+      under pytest **and** via bare `python3` (promotes a fixture into a temp master copy;
+      never touches the real master).
 
 ## Remaining — code (small, closable offline)
 
 Leverage-ordered:
 
-1. [ ] Wire `import_candidates.py --apply` into a reviewed GitHub Action so intake
-   opens a PR into the candidate ledger (never master), per control-plane doctrine.
-2. [ ] Emit the routing report into `reports/` on CI and attach it to intake PRs.
-3. [ ] Add a promotion helper that moves a reviewed candidate row from
-   `candidate_cases.jsonl` into `master_cases.jsonl` behind explicit review.
-4. [ ] Expand `source_registry.csv` columns for retrieval cadence / robots policy once
-   live scraping is enabled.
+1. [x] ~~Wire `import_candidates.py --apply` into a reviewed GitHub Action so intake
+   opens a PR into the candidate ledger (never master), per control-plane doctrine.~~
+   Done — `.github/workflows/candidate-intake.yml`.
+2. [x] ~~Emit the routing report into `reports/` on CI and attach it to intake PRs.~~
+   Done — the intake Action uploads `routing_report.csv` as an artifact and includes it
+   in the PR.
+3. [x] ~~Add a promotion helper that moves a reviewed candidate row from
+   `candidate_cases.jsonl` into `master_cases.jsonl` behind explicit review.~~
+   Done — `scripts/promote_candidate.py`.
+4. [x] ~~Expand `source_registry.csv` columns for retrieval cadence / robots policy once
+   live scraping is enabled.~~ Done — `retrieval_cadence` / `robots_policy` columns added.
+
+The offline **code** track is now closed. What remains is data / network-blocked
+corpus growth (below).
 
 ## Remaining — data / network-blocked
 
@@ -79,4 +102,6 @@ python3 scripts/validate_case_ledgers.py \
   data/already_listed.jsonl data/echoes_noise.jsonl data/updates_new_evidence.jsonl
 python3 scripts/import_candidates.py tests/fixtures/candidate_feed.jsonl --out-dir reports/intake
 python3 tests/test_import_candidates.py
+python3 tests/test_promote_candidate.py
+python3 -c "import yaml; yaml.safe_load(open('.github/workflows/candidate-intake.yml'))"
 ```

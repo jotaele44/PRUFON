@@ -35,6 +35,7 @@ import argparse
 import csv
 import json
 import sys
+from datetime import date
 from pathlib import Path
 from typing import Any
 
@@ -307,7 +308,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--duplicate-threshold", type=float, default=0.85)
     parser.add_argument("--update-threshold", type=float, default=0.55)
     parser.add_argument("--noise-floor", type=float, default=0.35)
-    parser.add_argument("--now", default="2026-07-12")
+    parser.add_argument(
+        "--now",
+        default=date.today().isoformat(),
+        help="Intake stamp date (YYYY-MM-DD); defaults to the current run date. "
+             "Override explicitly for deterministic tests.",
+    )
     args = parser.parse_args(argv)
 
     summary = run(
