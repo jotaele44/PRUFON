@@ -16,7 +16,9 @@ htmlcov/
 archive/
 artifacts/
 corpus/
-data/
+data/raw/
+data/cache/
+data/generated/
 evidence/
 exports/
 reports/generated/
