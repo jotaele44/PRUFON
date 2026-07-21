@@ -32,14 +32,16 @@ cd ovnis-pr
 python3 -m venv .venv
 source .venv/bin/activate
 
-# Runtime + hub-callable deps are pinned in requirements.txt (federation.json
-# `setup` installs from it). CI also needs the backend deps to run the suite:
+# thehub-pr must be checked out as a sibling: requirements.txt installs the shared
+# prii-* libraries as editable local paths (../thehub-pr/packages/*). CI also needs
+# the backend deps to run the suite:
+[ -d ../thehub-pr ] || git clone https://github.com/jotaele44/thehub-pr.git ../thehub-pr
 python -m pip install -r requirements.txt httpx -r server/backend/requirements.txt
 ```
 
 > `requirements.txt` carries the shared federation packages (`prii-maintenance`,
-> `prii-export-utils`) pinned to hub commit SHAs, so installing it needs network
-> access.
+> `prii-export-utils`) as editable local paths into a sibling `../thehub-pr`
+> checkout, so editing them in the hub propagates here with no per-repo bump.
 
 Run the checks CI runs:
 
