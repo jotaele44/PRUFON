@@ -34,12 +34,106 @@ import argparse
 import json
 import re
 import sys
+import unicodedata
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 # A datable value OVNIS accepts: YYYY, YYYY-MM, or YYYY-MM-DD (mirrors
 # validate_case_ledgers.DATE_RE so a coerced date will pass ledger validation).
 _DATE_RE = re.compile(r"^[0-9]{4}(-[0-9]{2}){0,2}$")
+
+# Shared PR reference geography (terrain+coastal slice of the federation gazetteer),
+# used to attribute a Puerto Rico location to a signal from its text — the same
+# canonical place vocabulary the Hub joins producers on.
+_GAZETTEER_PATH = Path(__file__).resolve().parents[1] / "data" / "reference" / "pr_natural_features.json"
+
+# Locations too generic to satisfy OVNIS's case gate (mirrors
+# validate_case_ledgers.GENERIC_LOCATIONS); never emit one as a resolved location.
+_GENERIC_LOCATIONS = {"pr", "puerto rico", "puerto rico, pr", "unknown", "islandwide"}
+
+
+def _fold(value: Any) -> str:
+    """Accent-fold to a match key: lower, strip diacritics, collapse to alnum+space.
+
+    Mirrors the federation join-key normalization (centinelas natural_features._fold)
+    so "Mayagüez" and "mayaguez" match, and matching is diacritic-insensitive.
+    """
+    text = "" if value is None else str(value)
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(c for c in text if not unicodedata.combining(c))
+    text = re.sub(r"[^a-z0-9]+", " ", text.lower())
+    return re.sub(r"\s+", " ", text).strip()
+
+
+@lru_cache(maxsize=2)
+def _load_geo_vocab(path_str: str) -> tuple[dict[str, tuple[str, str | None]], dict[str, str]]:
+    """Build the place lookup from the PR natural-features gazetteer.
+
+    Returns two folded-key → display maps:
+      * features:       folded(canonical_name) → (canonical_name, municipality|None).
+                        A name shared by features in different municipios keeps the
+                        name but drops the (ambiguous) municipality.
+      * municipalities: folded(municipality)   → municipality (canonical spelling).
+    Feature keys shorter than two tokens are skipped (a lone generic word like
+    "rio"/"coral" would over-match); multi-token names stay specific.
+    """
+    features: dict[str, tuple[str, str | None]] = {}
+    ambiguous: set[str] = set()
+    municipalities: dict[str, str] = {}
+    try:
+        data = json.loads(Path(path_str).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return features, municipalities
+
+    for rec in data.get("features", []) or []:
+        name = rec.get("canonical_name")
+        muni = rec.get("municipality")
+        if muni:
+            municipalities.setdefault(_fold(muni), muni)
+        if not name:
+            continue
+        key = _fold(name)
+        if not key or len(key.split()) < 2 or key in _GENERIC_LOCATIONS:
+            continue
+        if key in features and features[key][1] != muni:
+            ambiguous.add(key)
+        features.setdefault(key, (name, muni))
+    for key in ambiguous:
+        display, _ = features[key]
+        features[key] = (display, None)
+    return features, municipalities
+
+
+def resolve_pr_location(text: str, gazetteer_path: Path | None = None) -> tuple[str | None, str | None]:
+    """Attribute a Puerto Rico (location_name, municipality) from free text.
+
+    Prefers the most specific named feature mention (longest match); falls back to a
+    bare municipality mention. Returns (None, None) when no PR place is named — the
+    caller then leaves location_name blank and OVNIS's schema gate quarantines the
+    (likely non-PR) item, which is the intended behavior.
+    """
+    features, municipalities = _load_geo_vocab(str(gazetteer_path or _GAZETTEER_PATH))
+    padded = f" {_fold(text)} "
+
+    best_feature: tuple[str, str | None] | None = None
+    best_len = 0
+    for key, value in features.items():
+        if f" {key} " in padded and len(key) > best_len:
+            best_feature, best_len = value, len(key)
+    if best_feature is not None:
+        return best_feature
+
+    best_muni: str | None = None
+    best_len = 0
+    for key, display in municipalities.items():
+        if key in _GENERIC_LOCATIONS:
+            continue
+        if f" {key} " in padded and len(key) > best_len:
+            best_muni, best_len = display, len(key)
+    if best_muni is not None:
+        return best_muni, best_muni
+    return None, None
 
 
 def coerce_date_local(published_at: Any) -> str | None:
@@ -60,23 +154,31 @@ def signal_to_candidate_row(signal: dict[str, Any]) -> dict[str, Any]:
 
     Only the content fields OVNIS cannot default (date_local, location_name,
     description) plus provenance are set here; import_candidates.normalize fills the
-    rest of the candidate schema. Location comes from the resolved municipalities the
-    Centinelas router now forwards for ovnis-pr; absent that, location_name is left
-    blank and the row is quarantined downstream.
+    rest of the candidate schema.
+
+    Location is resolved consumer-side (the federation pattern — each consumer
+    attributes geo rather than trusting the producer): an explicit
+    ``signal.municipalities`` hint wins if present, otherwise the PR place is
+    resolved from the signal text against the gazetteer. When no PR place is named,
+    location_name is left blank and OVNIS's schema gate quarantines the (likely
+    non-PR) item downstream.
     """
     title = (signal.get("title") or "").strip()
     body = (signal.get("body_text") or "").strip()
     description = "\n\n".join(part for part in (title, body) if part)
 
     municipalities = signal.get("municipalities") or []
-    location_name = municipalities[0] if municipalities else None
+    if municipalities:
+        location_name, municipality = municipalities[0], municipalities[0]
+    else:
+        location_name, municipality = resolve_pr_location(f"{title}\n{body}")
     source_name = signal.get("source_name")
 
     return {
         "record_id": signal.get("item_id"),
         "date_local": coerce_date_local(signal.get("published_at")),
         "location_name": location_name,
-        "municipality": location_name,
+        "municipality": municipality,
         "description": description or None,
         "object_type": "UAP",
         "environment": None,

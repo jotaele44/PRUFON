@@ -59,6 +59,23 @@ _LOCATIONLESS_SIGNAL = {
     "municipalities": [],
 }
 
+# No municipalities hint from the producer — the PR location must be resolved from
+# the signal text against the gazetteer (the consumer-side geo-attribution path).
+_TEXT_LOCATED_SIGNAL = {
+    "schema_version": "1.0",
+    "item_id": "CENT-UAP-0003",
+    "source_url": "https://example.org/fajardo-report",
+    "source_name": "The Black Vault",
+    "title": "Strange lights reported over Fajardo",
+    "body_text": "Several residents described a silent formation of lights at dawn.",
+    "published_at": "2026-07-15T09:30:00+00:00",
+    "captured_at": "2026-07-16T00:00:00+00:00",
+    "evidence_tier": "T2",
+    "labels": ["ANOMALOUS"],
+    "confidence": 0.8,
+    "routed_to": "ovnis-pr",
+}
+
 
 def test_coerce_date_local_drops_time():
     assert adapter.coerce_date_local("2026-07-15T09:30:00+00:00") == "2026-07-15"
@@ -123,6 +140,52 @@ def test_located_signal_routes_as_candidate(tmp_path):
     assert summary["quarantined"] == []
 
 
+def test_resolve_pr_location_from_municipality_mention():
+    name, muni = adapter.resolve_pr_location("Strange lights seen over Fajardo last night")
+    assert name == "Fajardo"
+    assert muni == "Fajardo"
+
+
+def test_resolve_pr_location_prefers_named_feature():
+    # A specific gazetteer feature mention wins over a bare municipality, and
+    # backfills the municipality from the feature record.
+    name, muni = adapter.resolve_pr_location("A disc hovered near Arrecife Cardona off the coast")
+    assert name == "Arrecife Cardona"
+    # Municipality is backfilled when unambiguous; None only if the name collides.
+    assert muni in ("Ponce", None)
+
+
+def test_resolve_pr_location_returns_none_for_non_pr_text():
+    name, muni = adapter.resolve_pr_location("Distant lights over the open ocean, no fixable place")
+    assert name is None and muni is None
+
+
+def test_resolve_pr_location_rejects_generic_puerto_rico():
+    # A bare "Puerto Rico" mention is too generic for OVNIS's case gate.
+    name, muni = adapter.resolve_pr_location("Something unexplained happened somewhere in Puerto Rico")
+    assert name is None and muni is None
+
+
+def test_text_resolved_signal_routes_as_candidate(tmp_path):
+    """A signal with no municipalities hint but a PR place in its text routes as a candidate."""
+    row = adapter.signal_to_candidate_row(_TEXT_LOCATED_SIGNAL)
+    assert row["location_name"] == "Fajardo"
+    feed = _feed_from(_TEXT_LOCATED_SIGNAL, tmp_path)
+    summary = ic.run(
+        feed,
+        _empty_master(tmp_path),
+        tmp_path / "out",
+        apply=False,
+        duplicate_threshold=0.85,
+        update_threshold=0.55,
+        noise_floor=0.35,
+        now="2026-07-16",
+        report_path=None,
+    )
+    assert summary["routed"]["candidate"] == 1
+    assert summary["quarantined"] == []
+
+
 def test_locationless_signal_is_quarantined(tmp_path):
     """A signal with no resolvable PR location is quarantined by the schema gate, not routed."""
     feed = _feed_from(_LOCATIONLESS_SIGNAL, tmp_path)
@@ -148,10 +211,16 @@ if __name__ == "__main__":
 
     test_coerce_date_local_drops_time()
     test_located_signal_maps_to_candidate_row()
+    test_resolve_pr_location_from_municipality_mention()
+    test_resolve_pr_location_prefers_named_feature()
+    test_resolve_pr_location_returns_none_for_non_pr_text()
+    test_resolve_pr_location_rejects_generic_puerto_rico()
     with tempfile.TemporaryDirectory() as d:
         test_adapter_writes_feed_and_extracts_signal(Path(d))
     with tempfile.TemporaryDirectory() as d:
         test_located_signal_routes_as_candidate(Path(d))
+    with tempfile.TemporaryDirectory() as d:
+        test_text_resolved_signal_routes_as_candidate(Path(d))
     with tempfile.TemporaryDirectory() as d:
         test_locationless_signal_is_quarantined(Path(d))
     print("All ingest_centinelas_dispatch tests passed.")
