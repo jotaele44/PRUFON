@@ -22,6 +22,30 @@ export const hasCoords = (c) => {
   return l.lat != null && l.lon != null
 }
 
+// Return only browser-safe web links. Some legacy rows store citation text in
+// source_url; those values remain visible but must not be rendered as hrefs.
+export function sourceUrl(c) {
+  const raw = c?.source_url
+  if (typeof raw !== 'string' || !raw.trim()) return null
+
+  const value = raw.trim()
+  try {
+    const parsed = new URL(value)
+    return ['http:', 'https:'].includes(parsed.protocol) && parsed.hostname ? value : null
+  } catch {
+    return null
+  }
+}
+
+export const hasSourceUrl = (c) => sourceUrl(c) !== null
+
+export function sourceLabel(c) {
+  const citation = typeof c?.source_citation === 'string' ? c.source_citation.trim() : ''
+  const family = c?.source_family && c.source_family !== 'none' ? c.source_family : ''
+  const raw = typeof c?.source_url === 'string' ? c.source_url.trim() : ''
+  return citation || family || raw || c?.source || 'Source not supplied'
+}
+
 // Federal/military agency involvement (source_family), e.g. "USAF", "AARO", "FAA;
 // PR Police/FURA", "none". Ported from the reference HTML mockup's source-pill /
 // FOIA-row-highlight styling, adapted to this field since the ledger has no
