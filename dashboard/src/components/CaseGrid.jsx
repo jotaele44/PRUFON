@@ -10,7 +10,7 @@ import {
 import { tierBadge } from '@/lib/format'
 import { locString, hasCoords, hasSourceUrl, sourceFamilyMeta } from '@/lib/ovnis-format'
 import { cn } from '@/lib/utils'
-import { LinkOff, MapPinOff } from 'lucide-react'
+import { MapPinOff } from 'lucide-react'
 
 // All 470 master cases (includes cases without coordinates or source URLs,
 // both flagged inline rather than hidden).
@@ -69,7 +69,14 @@ export default function CaseGrid({ cases = [], selectedId, onSelect }) {
                 >
                   <TableCell className="text-xs text-slate-200 whitespace-nowrap">
                     <span className="inline-flex items-center gap-1">
-                      {!hasSourceUrl(c) && <LinkOff className="h-3 w-3 text-amber-400/80 shrink-0" title="source has no URL" />}
+                      {!hasSourceUrl(c) && (
+                        <span
+                          className="rounded border border-amber-500/30 px-1 text-[9px] leading-4 text-amber-300"
+                          title="source has no URL"
+                        >
+                          No URL
+                        </span>
+                      )}
                       {c.case_id}
                     </span>
                   </TableCell>
