@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDisplayName</key>
-	<string>OVNIS — PRII</string>
+	<string>OVNIS</string>
 	<key>CFBundleExecutable</key>
 	<string>PRII-OVNIS</string>
 	<key>CFBundleIconFile</key>
@@ -11,7 +11,7 @@
 	<key>CFBundleIdentifier</key>
 	<string>pr.prii.ovnis.launcher</string>
 	<key>CFBundleName</key>
-	<string>OVNIS — PRII</string>
+	<string>OVNIS</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
