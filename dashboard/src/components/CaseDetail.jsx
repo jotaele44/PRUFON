@@ -3,11 +3,15 @@ import {
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { tierBadge } from '@/lib/format'
-import { confidenceTone, locString, hasCoords, sourceFamilyMeta } from '@/lib/ovnis-format'
+import {
+  confidenceTone, locString, hasCoords, sourceFamilyMeta, sourceLabel, sourceUrl,
+} from '@/lib/ovnis-format'
 import { cn } from '@/lib/utils'
+import { ExternalLink } from 'lucide-react'
 
 export default function CaseDetail({ case: c, onClose }) {
   const agency = c ? sourceFamilyMeta(c.source_family) : null
+  const link = c ? sourceUrl(c) : null
   return (
     <Sheet open={!!c} onOpenChange={(o) => !o && onClose?.()}>
       <SheetContent className="bg-slate-950 border-slate-800 text-slate-200 w-full sm:max-w-md overflow-y-auto">
@@ -33,7 +37,28 @@ export default function CaseDetail({ case: c, onClose }) {
                 {c.witness ? `${c.witness.class ?? '—'}${c.witness.count ? ` · ${c.witness.count}` : ''}${c.witness.name ? ` · ${c.witness.name}` : ''}` : '—'}
               </Field>
               <Field label="Evidence type">{c.evidence_type ?? '—'}</Field>
-              <Field label="Source">{c.source ?? '—'}</Field>
+              <Field label="Source">
+                <div className="flex flex-wrap items-center gap-2">
+                  {link ? (
+                    <a
+                      href={link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-w-0 items-center gap-1 text-sky-300 underline decoration-sky-500/50 underline-offset-2 hover:text-sky-200 break-all"
+                    >
+                      <span>{sourceLabel(c)}</span>
+                      <ExternalLink className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    </a>
+                  ) : (
+                    <span className="break-words">{sourceLabel(c)}</span>
+                  )}
+                  {!link && (
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-300 border-amber-500/30">
+                      No URL
+                    </Badge>
+                  )}
+                </div>
+              </Field>
               {agency && (
                 <Field label="Agency involvement">
                   <Badge variant="outline" className={cn('text-[10px]', agency.badge)}>{agency.label}</Badge>
