@@ -25,7 +25,10 @@ def test_queue_excludes_terminal_assessments():
     module = _module()
     candidate = _candidate()
     assert len(module.build_queue([candidate], [])) == 1
-    assessment = {"candidate_id": candidate["candidate_id"], "review_status": "adjudicated"}
+    assessment = {
+        "candidate_id": candidate["candidate_id"],
+        "review_status": "adjudicated",
+    }
     assert module.build_queue([candidate], [assessment]) == []
 
 
@@ -59,7 +62,9 @@ def test_material_findings_require_second_review():
     first = module.adjudicate(
         candidate,
         classification="CONTRADICTORY",
-        reasoning_summary="The documented activity conflicts with the reported characteristics.",
+        reasoning_summary=(
+            "The documented activity conflicts with the reported characteristics."
+        ),
         reviewer="reviewer-a",
     )
     assert first["review_status"] == "needs_second_review"
