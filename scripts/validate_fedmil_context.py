@@ -9,8 +9,8 @@ from __future__ import annotations
 import argparse
 import json
 import re
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 ASSESSMENT_ID = re.compile(r"^assess_[a-f0-9]{32}$")
 CANDIDATE_ID = re.compile(r"^cand_[a-f0-9]{32}$")
