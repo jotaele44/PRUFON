@@ -8,6 +8,7 @@ import PageNotFound from './lib/PageNotFound'
 const Router = import.meta.env.VITE_OFFLINE === '1' ? HashRouter : BrowserRouter
 import ScrollToTop from './components/ScrollToTop'
 import Dashboard from './pages/Dashboard'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // Auth stripped: routes render directly, no AuthProvider / ProtectedRoute.
 function App() {
@@ -15,10 +16,14 @@ function App() {
     <QueryClientProvider client={queryClientInstance}>
       <Router>
         <ScrollToTop />
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="*" element={<PageNotFound />} />
-        </Routes>
+        {/* Inside the router so a throw keeps the shell and the URL, and the
+            operator can navigate away instead of facing a blank document. */}
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="*" element={<PageNotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </Router>
       <Toaster />
     </QueryClientProvider>

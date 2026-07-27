@@ -8,18 +8,51 @@ export const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 // (A file:// page cannot fetch at all, so standalone exports bake the data in.)
 const OFFLINE = import.meta.env.VITE_OFFLINE === '1'
 
-async function getJSON(path, fallback = null) {
+/** Error carrying enough detail for the UI to say what went wrong. */
+export class ApiError extends Error {
+  constructor(message, { status = null, path = null, cause = null } = {}) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.path = path
+    this.cause = cause
+  }
+}
+
+// Throws on failure rather than returning a fallback.
+//
+// This previously swallowed both a non-2xx response and a thrown request into
+// `fallback`, and every caller passed `[]` or a benign shape. Because the
+// promise then *resolved*, react-query's `isError` was never true — the whole
+// error path was dead code — and a backend outage rendered as
+// "Queue empty" (CandidateReview.jsx) or an empty map. The operator was shown a
+// confident, wrong answer: "there is nothing here" instead of "I could not ask".
+//
+// Failing loudly restores react-query's retry and error handling, and callers
+// distinguish the two states with `isError` vs. an genuinely empty array.
+async function getJSON(path) {
   if (OFFLINE) {
     const key = path.split('?')[0] // server-side filters degrade to the unfiltered snapshot
-    return key in snapshot ? snapshot[key] : fallback
+    if (key in snapshot) return snapshot[key]
+    // A missing snapshot key in an offline build is a build defect, not an
+    // outage — but it is still not data, so it must not read as empty either.
+    throw new ApiError(`No offline snapshot for ${key}`, { path: key })
   }
+  let res
   try {
-    const res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
-    if (!res.ok) return fallback
-    return await res.json()
-  } catch {
-    return fallback
+    res = await fetch(`${API_BASE}${path}`, { signal: AbortSignal.timeout(8000) })
+  } catch (cause) {
+    throw new ApiError(
+      cause?.name === 'TimeoutError'
+        ? `Request to ${path} timed out after 8s`
+        : `Could not reach the backend at ${API_BASE}`,
+      { path, cause },
+    )
   }
+  if (!res.ok) {
+    throw new ApiError(`Backend returned ${res.status} for ${path}`, { status: res.status, path })
+  }
+  return res.json()
 }
 
 const qs = (params) => {
@@ -27,10 +60,10 @@ const qs = (params) => {
   return p.length ? '?' + new URLSearchParams(p).toString() : ''
 }
 
-export const getHealth = () => getJSON('/health', { status: 'down' })
-export const getCases = (f = {}) => getJSON(`/cases${qs(f)}`, [])
-export const getCase = (id) => getJSON(`/cases/${encodeURIComponent(id)}`, null)
-export const getCandidates = () => getJSON('/candidates', [])
-export const getGeojson = () => getJSON('/geojson', { type: 'FeatureCollection', features: [] })
-export const getStats = () => getJSON('/stats', null)
-export const search = (q) => getJSON(`/search${qs({ q })}`, [])
+export const getHealth = () => getJSON('/health')
+export const getCases = (f = {}) => getJSON(`/cases${qs(f)}`)
+export const getCase = (id) => getJSON(`/cases/${encodeURIComponent(id)}`)
+export const getCandidates = () => getJSON('/candidates')
+export const getGeojson = () => getJSON('/geojson')
+export const getStats = () => getJSON('/stats')
+export const search = (q) => getJSON(`/search${qs({ q })}`)

@@ -1,5 +1,6 @@
 import { federationTone, FederationEmptyState } from '@pr-federation/react'
 import { useCandidates } from '@/lib/hooks'
+import QueryState from '@/components/QueryState'
 import { Badge } from '@/components/ui/badge'
 import { tierBadge } from '@/lib/format'
 import { locString } from '@/lib/ovnis-format'
@@ -19,7 +20,18 @@ const STATUS_ROLE = {
 
 // Candidate intake queue (awaiting promotion to master).
 export default function CandidateReview() {
-  const { data: candidates = [] } = useCandidates()
+  const { data: candidates = [], isLoading, isError, error, refetch } = useCandidates()
+
+  // The count line asserts a fact about the queue, so it must not render while
+  // the queue is unknown — "0 candidates in queue" was the same lie as
+  // "Queue empty".
+  if (isLoading || isError) {
+    return (
+      <div className="h-full overflow-auto p-2">
+        <QueryState loading={isLoading} error={isError ? error : null} onRetry={refetch} />
+      </div>
+    )
+  }
 
   return (
     <div className="h-full overflow-auto p-2 space-y-1.5">
@@ -43,8 +55,8 @@ export default function CandidateReview() {
           <p className="text-[11px] text-slate-500 mt-0.5">{c.date_raw || '—'} · {locString(c)}</p>
         </div>
       ))}
-      {/* Shared federation empty state (@pr-federation/react) so "nothing here"
-          reads the same in the review queue as everywhere else in the federation. */}
+      {/* Reached only when the fetch succeeded, so an empty queue here is a
+          real fact about the data rather than a swallowed failure. */}
       {candidates.length === 0 && <FederationEmptyState className="py-8" title="Queue empty" />}
     </div>
   )
