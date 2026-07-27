@@ -51,7 +51,7 @@ def write_csv(rows: list[dict[str, Any]], path: Path) -> None:
     if not rows:
         path.write_text("", encoding="utf-8")
         return
-    fields = sorted({key for row in rows for key in row.keys()})
+    fields = sorted({key for row in rows for key in row})
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields)
         writer.writeheader()

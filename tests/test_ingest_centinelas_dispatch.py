@@ -18,8 +18,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-import ingest_centinelas_dispatch as adapter  # noqa: E402
 import import_candidates as ic  # noqa: E402
+import ingest_centinelas_dispatch as adapter  # noqa: E402
 
 
 def _dispatch_event(signal: dict) -> dict:
@@ -101,7 +101,7 @@ def test_adapter_writes_feed_and_extracts_signal(tmp_path):
     out = tmp_path / "feed.jsonl"
     summary = adapter.run(event_path, out)
     assert summary["signals"] == 1 and summary["rows"] == 1
-    lines = [l for l in out.read_text(encoding="utf-8").splitlines() if l.strip()]
+    lines = [line for line in out.read_text(encoding="utf-8").splitlines() if line.strip()]
     assert len(lines) == 1
     assert json.loads(lines[0])["record_id"] == "CENT-UAP-0001"
 

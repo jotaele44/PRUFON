@@ -1,0 +1,57 @@
+# Tool configuration for ovnis-pr.
+#
+# Config-only, with no [project] table, matching moneysweep-pr and skywatcher-pr.
+# This repo is a script and service collection (scripts/, server/, maintenance/,
+# desktop/), not an importable package — there is nothing to build a wheel from,
+# and inventing a package here would misrepresent the layout. Runtime
+# dependencies stay in requirements.txt and are pinned in requirements.lock.
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = ["-ra", "--strict-markers"]
+testpaths = ["tests"]
+# tests/conftest.py puts scripts/ on sys.path; the modules under test are
+# imported by bare name (e.g. `import promote_candidate`) rather than as a
+# package, so no pythonpath entry is needed here.
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["scripts", "server", "maintenance", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "W"]
+ignore = ["E501"] # line length is handled by the formatter, not the linter
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["B011"] # assert False is idiomatic in tests
+
+# Gradually-typed baseline, matching the approach in spiderweb-pr and
+# moneysweep-pr. follow_imports = "silent" scopes the check to the files listed
+# below: modules they import that are not yet typed are followed for symbols but
+# their own errors are not reported, so the gate stays green while coverage
+# widens. The CI job is non-gating to start (see .github/workflows/ci.yml).
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+no_implicit_optional = true
+warn_redundant_casts = true
+follow_imports = "silent"
+files = ["scripts", "maintenance"]
+
+[tool.coverage.run]
+branch = true
+source = ["scripts", "maintenance", "server"]
+omit = ["tests/*", "desktop/*", "*/__init__.py"]
+
+[tool.coverage.report]
+# Ratchet, not a target: 53% measured when this landed, floor set at
+# 50% so normal variation across the CI Python matrix does not cause false
+# failures. Raise it as coverage improves; never lower it to make a build pass.
+fail_under = 50
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+    "if TYPE_CHECKING:",
+]

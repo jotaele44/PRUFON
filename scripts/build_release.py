@@ -17,9 +17,9 @@ import csv
 import hashlib
 import io
 import json
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MASTER_LEDGER = REPO_ROOT / "data/master/master_cases.jsonl"
@@ -39,20 +39,20 @@ def _sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def _is_placeholder(case: Dict[str, Any]) -> bool:
+def _is_placeholder(case: dict[str, Any]) -> bool:
     return case.get("source_family") == "placeholder" or case.get("record_id", "").endswith("-0000")
 
 
-def _has_coords(case: Dict[str, Any]) -> bool:
+def _has_coords(case: dict[str, Any]) -> bool:
     return case.get("latitude") is not None and case.get("longitude") is not None
 
 
-def load_master() -> List[Dict[str, Any]]:
+def load_master() -> list[dict[str, Any]]:
     cases = [json.loads(ln) for ln in MASTER_LEDGER.read_text().splitlines() if ln.strip()]
     return [c for c in cases if not _is_placeholder(c)]
 
 
-def build_geojson(cases: List[Dict[str, Any]]) -> Dict[str, Any]:
+def build_geojson(cases: list[dict[str, Any]]) -> dict[str, Any]:
     features = []
     for case in cases:
         if not _has_coords(case):
@@ -69,7 +69,7 @@ def build_geojson(cases: List[Dict[str, Any]]) -> Dict[str, Any]:
     return {"type": "FeatureCollection", "features": features}
 
 
-def build_csv(cases: List[Dict[str, Any]]) -> str:
+def build_csv(cases: list[dict[str, Any]]) -> str:
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=CSV_FIELDS, extrasaction="ignore", lineterminator="\n")
     writer.writeheader()
@@ -103,7 +103,7 @@ def main() -> int:
     csv_path = out_dir / "ovnis_cases_master.csv"
     csv_path.write_bytes(csv_bytes)
 
-    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    now = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     mapped = sum(1 for c in cases if _has_coords(c))
     manifest = {
         "release_date": args.date,

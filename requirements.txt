@@ -1,6 +1,7 @@
 # Runtime + hub-callable dependencies for ovnis-pr. federation.json's
 # `setup` command and the CI workflows install from this file.
 pytest
+pytest-cov
 jsonschema
 # Shared federation packages from thehub-pr, resolved via a local editable path
 # instead of a pinned commit SHA: edit the package once in thehub-pr/packages
