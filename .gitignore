@@ -118,3 +118,9 @@ build/
 dashboard/export-standalone/
 desktop/.running
 dist-smoke/
+
+# Coverage artifacts (pytest --cov / coverage.py)
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml

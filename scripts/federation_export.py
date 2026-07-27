@@ -24,9 +24,11 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
-from prii_export_utils import fid as _fid, norm as _norm, sha256 as _sha256
+from prii_export_utils import fid as _fid
+from prii_export_utils import norm as _norm
+from prii_export_utils import sha256 as _sha256
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PRODUCER = "ovnis-pr"
@@ -37,13 +39,13 @@ PRODUCER_SCRIPT = "scripts/federation_export.py"
 TIER_CONFIDENCE = {"T1": 0.9, "T2": 0.7, "T3": 0.5, "T4": 0.3}
 
 
-def _iso(value: Optional[str], fallback: str) -> str:
+def _iso(value: str | None, fallback: str) -> str:
     if value:
         return value
     return fallback
 
 
-def _lineage(phase: str, inputs: List[str]) -> Dict[str, Any]:
+def _lineage(phase: str, inputs: list[str]) -> dict[str, Any]:
     return {
         "producer_script": PRODUCER_SCRIPT,
         "producer_phase": phase,
@@ -52,7 +54,7 @@ def _lineage(phase: str, inputs: List[str]) -> Dict[str, Any]:
     }
 
 
-def _observed_at(case: Dict[str, Any], fallback: str) -> tuple:
+def _observed_at(case: dict[str, Any], fallback: str) -> tuple:
     """Hub-required tz-aware observed_at from date_local/time_local.
 
     Historical cases carry year / year-month / full-date precision; the
@@ -74,11 +76,11 @@ def _observed_at(case: Dict[str, Any], fallback: str) -> tuple:
     return f"{date}T{time}:00-04:00", precision
 
 
-def build_streams(cases: List[Dict[str, Any]], now: str) -> Dict[str, List[Dict[str, Any]]]:
-    sources: Dict[str, Dict[str, Any]] = {}
-    entities: Dict[str, Dict[str, Any]] = {}
-    relationships: Dict[str, Dict[str, Any]] = {}
-    observations: Dict[str, Dict[str, Any]] = {}
+def build_streams(cases: list[dict[str, Any]], now: str) -> dict[str, list[dict[str, Any]]]:
+    sources: dict[str, dict[str, Any]] = {}
+    entities: dict[str, dict[str, Any]] = {}
+    relationships: dict[str, dict[str, Any]] = {}
+    observations: dict[str, dict[str, Any]] = {}
     src_inputs = ["data/master/master_cases.jsonl"]
 
     for case in cases:
@@ -236,7 +238,7 @@ STREAM_SCHEMA = {
 }
 
 
-def write_package(streams: Dict[str, List[Dict[str, Any]]], out_dir: Path, mode: str, now: str) -> Path:
+def write_package(streams: dict[str, list[dict[str, Any]]], out_dir: Path, mode: str, now: str) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     files = []
     for stream in ("sources", "entities", "relationships", "observations"):
