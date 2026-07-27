@@ -8,7 +8,7 @@
 
 Local-only React dashboard for the OVNIS UAP sighting registry. Same federation
 frontend process — Vite + React (JSX) + Tailwind + shadcn/ui + react-query,
-Base44 auth stripped. **MapLibre GL** renders the sighting map.
+Auth stripped. **MapLibre GL** renders the sighting map.
 
 ## Run
 

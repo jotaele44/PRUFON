@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom'
 
-// Auth-stripped 404 (no base44 auth lookup).
+// Auth-stripped 404 (no auth lookup).
 export default function PageNotFound() {
   const location = useLocation()
   const pageName = location.pathname.substring(1)
