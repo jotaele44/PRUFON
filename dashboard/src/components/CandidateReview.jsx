@@ -1,4 +1,4 @@
-import { federationTone } from '@pr-federation/react'
+import { federationTone, FederationEmptyState } from '@pr-federation/react'
 import { useCandidates } from '@/lib/hooks'
 import { Badge } from '@/components/ui/badge'
 import { tierBadge } from '@/lib/format'
@@ -43,7 +43,9 @@ export default function CandidateReview() {
           <p className="text-[11px] text-slate-500 mt-0.5">{c.date_raw || '—'} · {locString(c)}</p>
         </div>
       ))}
-      {candidates.length === 0 && <p className="text-center text-sm text-slate-500 py-8">Queue empty</p>}
+      {/* Shared federation empty state (@pr-federation/react) so "nothing here"
+          reads the same in the review queue as everywhere else in the federation. */}
+      {candidates.length === 0 && <FederationEmptyState className="py-8" title="Queue empty" />}
     </div>
   )
 }
