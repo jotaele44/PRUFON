@@ -22,7 +22,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -279,7 +279,7 @@ def main() -> int:
     args = ap.parse_args()
 
     cases = [json.loads(line) for line in Path(args.ledger).read_text().splitlines() if line.strip()]
-    now = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     streams = build_streams(cases, now)
 
     if args.mode == "production":

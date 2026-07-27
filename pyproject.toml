@@ -16,7 +16,11 @@ testpaths = ["tests"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+# MUST track the lowest version in .github/workflows/validate.yml's matrix
+# (3.10), not the version ci.yml happens to use. Setting this to py312 makes
+# ruff's pyupgrade rules rewrite `timezone.utc` to `datetime.UTC`, which is
+# 3.11+ only and breaks the 3.10 matrix leg at import time.
+target-version = "py310"
 src = ["scripts", "server", "maintenance", "tests"]
 
 [tool.ruff.lint]
@@ -32,7 +36,9 @@ ignore = ["E501"] # line length is handled by the formatter, not the linter
 # their own errors are not reported, so the gate stays green while coverage
 # widens. The CI job is non-gating to start (see .github/workflows/ci.yml).
 [tool.mypy]
-python_version = "3.12"
+# Matches the ruff target and the CI matrix floor, so mypy does not accept
+# stdlib APIs that are unavailable on the oldest Python this repo runs on.
+python_version = "3.10"
 ignore_missing_imports = true
 no_implicit_optional = true
 warn_redundant_casts = true

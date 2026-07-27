@@ -17,7 +17,7 @@ import csv
 import hashlib
 import io
 import json
-from datetime import UTC, date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -103,7 +103,7 @@ def main() -> int:
     csv_path = out_dir / "ovnis_cases_master.csv"
     csv_path.write_bytes(csv_bytes)
 
-    now = datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+    now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
     mapped = sum(1 for c in cases if _has_coords(c))
     manifest = {
         "release_date": args.date,
