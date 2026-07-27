@@ -105,3 +105,23 @@ python3 tests/test_import_candidates.py
 python3 tests/test_promote_candidate.py
 python3 -c "import yaml; yaml.safe_load(open('.github/workflows/candidate-intake.yml'))"
 ```
+
+---
+
+## Two completion numbers, and why they differ
+
+This ledger says **~82%**. [`MATURITY_AUDIT.md`](MATURITY_AUDIT.md) says **68%**.
+Both are correct; they measure different things and should be read together.
+
+| | Measures | Counts a thing "done" when |
+|---|---|---|
+| **`ROAD_TO_100.md`** (~82%) | code completeness against intended scope | the code exists, works, and is exercised — code track complete; gap is corpus growth |
+| **`MATURITY_AUDIT.md`** (68%) | professional maturity of the repo as an engineering artifact | a **gate** keeps it working: CI-enforced lint, types, coverage, and frontend tests |
+
+The spread is almost entirely **enforcement, not implementation**. Work that this
+ledger correctly counts as finished still costs maturity points while no CI gate
+protects it — a passing suite with no coverage floor, a `typecheck` script no
+workflow runs, a linter configured but not wired in.
+
+Neither number supersedes the other. Use this ledger to answer "what is left to
+build"; use the audit to answer "what would a reviewer refuse to merge".

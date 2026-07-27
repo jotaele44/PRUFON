@@ -99,3 +99,24 @@ for future comparison: `72 passed` (6.5s); `npm ci && npm run lint && npm run bu
 | 4 | Grow the test suite | **M** | 8 test files / 72 tests for 3.8k LOC. Ratio is not alarming for the size, but it is the federation's thinnest. |
 | 5 | Add a frontend test runner | **M** | Zero frontend tests for 4.8k LOC. |
 | 6 | Add an a11y test to lock in the good markup | **S** | The `aria-*` coverage here is a real asset; `thehub-pr`'s `vitest-axe` gate would keep it from eroding. |
+
+---
+
+## Maturity score — 68%
+
+Measured 2026-07-27 against 20 explicit criteria (5 points each, 100 total). Every
+lost point is a specific, verifiable work item, so this doubles as the roadmap.
+
+| Dimension | Score | Criteria (5 pts each) |
+|---|---|---|
+| Functional completeness | **18/20** | backend serves domain · no dead UI · entrypoints work · modules wired, no duplicate mass |
+| Data reality | **20/20** | real non-synthetic dataset · refresh automated · offline bundle populated · live-exec gate open |
+| UI craft | **12/20** | pages proportionate to backend · loading+empty+error everywhere · a11y markup **and** automated gate · single consolidated frontend |
+| Tests | **5/15** | suite green · coverage gate enforced · frontend tests run in CI |
+| Hygiene | **5/15** | linters gated in CI · type checking gated in CI · write surface secured *and* client can use it |
+| Docs | **8/10** | docs match code · declared status matches observed maturity |
+| **Total** | **68/100** | |
+
+The earlier 0–4 per-dimension scorecard above is retained for cross-repo comparison,
+but it saturates — `aguayluz-pr` scored 24/24 on it while still having no frontend
+tests. This finer model is the one to plan against.
