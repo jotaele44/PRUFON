@@ -11,10 +11,17 @@ import { Telescope } from 'lucide-react'
 export default function Dashboard() {
   const { data: geojson } = useGeojson()
   const { data: cases = [] } = useCases()
-  const { data: health } = useHealth()
+  const { data: health, isError: healthError, isLoading: healthLoading } = useHealth()
   const [selected, setSelected] = useState(null)
 
-  const up = health?.status === 'ok'
+  const up = !healthError && health?.status === 'ok'
+  // Three states, not two. "connecting…" was shown indefinitely once the health
+  // request started failing, so an unreachable backend looked like a slow one.
+  const healthLabel = healthError
+    ? 'backend unreachable'
+    : healthLoading || !health
+      ? 'connecting…'
+      : `${health.master} cases · ${health.mapped} mapped · ${health.unmapped} unmapped`
   const selectByProps = (props) => {
     const full = cases.find((c) => c.case_id === props.case_id)
     setSelected(full ?? props)
@@ -30,7 +37,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2 text-xs text-slate-400">
           <span className={`inline-flex h-2 w-2 rounded-full ${up ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-          {health ? `${health.master} cases · ${health.mapped} mapped · ${health.unmapped} unmapped` : 'connecting…'}
+          <span role={healthError ? 'alert' : undefined}>{healthLabel}</span>
         </div>
       </header>
 

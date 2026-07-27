@@ -1,4 +1,5 @@
 import { useStats } from '@/lib/hooks'
+import QueryState from '@/components/QueryState'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell,
 } from 'recharts'
@@ -9,7 +10,18 @@ function toData(obj = {}) {
 }
 
 export default function StatsPanel() {
-  const { data: stats } = useStats()
+  const { data: stats, isLoading, isError, error, refetch } = useStats()
+
+  // KPIs are assertions about the corpus. Rendering them from `{}` printed
+  // blanks that read as "zero cases" rather than "the numbers are unknown".
+  if (isLoading || isError) {
+    return (
+      <div className="h-full overflow-auto p-3">
+        <QueryState loading={isLoading} error={isError ? error : null} onRetry={refetch} />
+      </div>
+    )
+  }
+
   const s = stats ?? {}
   const decades = toData(s.byDecade).sort((a, b) => a.name.localeCompare(b.name))
   const tiers = ['T1', 'T2', 'T3', 'T4'].map((t) => ({ name: t, value: s.byTier?.[t] ?? 0 }))
