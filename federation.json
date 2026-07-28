@@ -5,6 +5,11 @@
   "repository_legacy_name": "PRUFON",
   "federation_role": "anomaly_intelligence_node",
   "hub_parent": "thehub-pr",
+  "branding": {
+    "icon": "assets/branding/icon.png",
+    "icon_dir": "assets/branding",
+    "accent_color": "#8a148c"
+  },
   "jurisdiction": "Puerto Rico",
   "active_vector": "DESIGN_OVNIS_GITHUB_CONTROL_PLANE",
   "production_status": "PRODUCTION",
