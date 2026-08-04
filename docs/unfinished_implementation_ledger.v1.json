@@ -1,0 +1,13 @@
+{
+  "schema_version":"1.0.0","repository":"jotaele44/ovnis-pr","audit_date":"2026-08-04","normalized_score":79.90,
+  "weights":{"code_completeness":20,"main_branch_availability":15,"ci_enforcement":15,"data_materialization":15,"operator_verification":15,"gui_completeness":10,"federation_readiness":10},
+  "dimensions":{"code_completeness":90,"main_branch_availability":88,"ci_enforcement":78,"data_materialization":75,"operator_verification":65,"gui_completeness":75,"federation_readiness":85},
+  "items":[
+    {"id":"OVN-001","title":"Land isolated-clone runtime","state":"open_pr","owner":"ovnis-pr","blocker":"final_head_ci","dependency":["PR-70"],"evidence":["pull/70"],"exit_criteria":"Main installs, tests and packages without a sibling TheHub checkout."},
+    {"id":"OVN-002","title":"Reconcile workspace policy","state":"open_pr","owner":"ovnis-pr","blocker":"overlap_with_isolation_pr","dependency":["PR-68","OVN-001"],"evidence":["pull/68"],"exit_criteria":"One current workspace policy remains and is aligned with TheHub authority."},
+    {"id":"OVN-003","title":"Supersede or refresh GUI parity candidate","state":"stale_open_pr","owner":"ovnis-pr","blocker":"main_drift","dependency":["PR-67"],"evidence":["pull/67","pull/69"],"exit_criteria":"Current main has the parity ratchet and reachability evidence, or #67 is closed as superseded."},
+    {"id":"OVN-004","title":"Run recurring source discovery and candidate intake","state":"operator_run","owner":"ovnis_operator","blocker":"live_source_access","dependency":[],"evidence":["data/reference/source_registry.csv","scripts/import_candidates.py"],"exit_criteria":"A reproducible governed run records source accounting and routes real candidates without modifying master."},
+    {"id":"OVN-005","title":"Grow corpus through reviewed promotion","state":"ongoing_data","owner":"ovnis_reviewer","blocker":"candidate_review","dependency":["OVN-004"],"evidence":["scripts/promote_candidate.py"],"exit_criteria":"Reviewed candidates are promoted individually with validation and lineage receipts."},
+    {"id":"OVN-006","title":"Backfill missing case coordinates","state":"data_enrichment","owner":"ovnis-pr","blocker":"source_precision_and_review","dependency":[],"evidence":["data/master/master_cases.jsonl"],"exit_criteria":"Missing coordinates are resolved or explicitly unresolvable with source, method, precision and review state."}
+  ]
+}
