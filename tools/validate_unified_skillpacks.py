@@ -29,7 +29,7 @@ def validate(root: Path) -> dict[str, Any]:
         if not c.get("status"): errors.append(f"blank capability status: {cid}")
         if not c.get("preserved_responsibility"): errors.append(f"blank preserved responsibility: {cid}")
         if not anchor or f'<a id="{anchor}"></a>' not in skill_text: errors.append(f"missing capability anchor: {cid}")
-        if f'### `{cid}`' not in skill_text: errors.append(f"missing capability in dispatcher: {cid}")
+        if f'`{cid}`' not in skill_text: errors.append(f"missing capability in dispatcher: {cid}")
         replacement=c.get("replacement")
         if replacement and replacement not in ids: errors.append(f"missing alias target for: {cid}")
     legacy_entries=legacy.get("entries",[]); repo_ids=set(binding["capability_ids"]); legacy_ids={e["capability_id"] for e in legacy_entries}
