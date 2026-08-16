@@ -6,11 +6,12 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 
 import import_prufon_legacy as legacy
-from validate_case_ledgers import core_validate
+from validate_case_ledgers import core_validate, validate
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE_SCHEMA = ROOT / "schemas" / "case_record.schema.json"
 SOURCE_SCHEMA = ROOT / "schemas" / "source_record.schema.json"
+MASTER = ROOT / "data" / "master" / "master_cases.jsonl"
 
 
 def _base_row(**overrides):
@@ -34,6 +35,10 @@ def _base_row(**overrides):
 def test_public_schemas_are_valid_draft_2020_12():
     Draft202012Validator.check_schema(json.loads(CASE_SCHEMA.read_text(encoding="utf-8")))
     Draft202012Validator.check_schema(json.loads(SOURCE_SCHEMA.read_text(encoding="utf-8")))
+
+
+def test_existing_master_ledger_validates_against_public_schema():
+    assert validate([MASTER], CASE_SCHEMA) == 0
 
 
 def test_csv_aliases_preserve_issue_facing_fields_without_inference(tmp_path):
