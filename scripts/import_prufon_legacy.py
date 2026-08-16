@@ -19,8 +19,9 @@ import hashlib
 import json
 import re
 import zipfile
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 from xml.etree import ElementTree as ET
 
 from validate_case_ledgers import core_validate
