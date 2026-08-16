@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jotaele44/ovnis-pr/schemas/source_record.schema.json",
+  "title": "PRUFON Source Record",
+  "description": "Source-lineage record for historical case imports. Original titles and locators are preserved verbatim when supplied.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["source_ref", "source_tier"],
+  "properties": {
+    "source_ref": {"type": "string", "minLength": 3},
+    "source_tier": {"type": "string", "enum": ["T1", "T2", "T3", "T4"]},
+    "source_url": {"type": ["string", "null"]},
+    "source_title": {"type": ["string", "null"]},
+    "source_title_original": {"type": ["string", "null"]},
+    "source_family": {"type": ["string", "null"]},
+    "language": {"type": ["string", "null"]},
+    "document_date": {"type": ["string", "null"]},
+    "retrieved_at": {"type": ["string", "null"]},
+    "sha256": {"type": ["string", "null"], "pattern": "^[0-9a-fA-F]{64}$"},
+    "archive_locator": {"type": ["string", "null"]},
+    "notes": {"type": ["string", "null"]}
+  }
+}
