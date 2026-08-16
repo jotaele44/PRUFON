@@ -25,7 +25,6 @@ from xml.etree import ElementTree as ET
 
 from validate_case_ledgers import core_validate
 
-DATE_RE = re.compile(r"^[0-9]{4}(-[0-9]{2}){0,2}$")
 TRUE_VALUES = {"1", "true", "yes", "y"}
 FALSE_VALUES = {"0", "false", "no", "n"}
 
@@ -236,14 +235,16 @@ def read_markdown(path: Path) -> list[dict[str, Any]]:
 
     headers = cells(lines[0])
     separator = cells(lines[1])
-    if len(headers) != len(separator) or not all(re.fullmatch(r":?-{3,}:?", cell) for cell in separator):
+    if len(headers) != len(separator) or not all(
+        re.fullmatch(r":?-{3,}:?", cell) for cell in separator
+    ):
         raise ValueError("invalid markdown table separator")
     rows: list[dict[str, Any]] = []
     for line in lines[2:]:
         values = cells(line)
         if len(values) != len(headers):
             raise ValueError("markdown row column count does not match header")
-        rows.append(dict(zip(headers, values)))
+        rows.append(dict(zip(headers, values, strict=True)))
     return rows
 
 
@@ -274,7 +275,11 @@ def _cell_value(cell: ET.Element, shared: list[str], ns: str) -> str | None:
 
 def read_xlsx(path: Path) -> list[dict[str, Any]]:
     with zipfile.ZipFile(path) as book:
-        sheet_names = sorted(name for name in book.namelist() if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", name))
+        sheet_names = sorted(
+            name
+            for name in book.namelist()
+            if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", name)
+        )
         if not sheet_names:
             raise ValueError("xlsx has no worksheets")
         shared = _shared_strings(book)
@@ -316,7 +321,9 @@ def read_rows(path: Path, input_format: str | None = None) -> list[dict[str, Any
     raise ValueError(f"unsupported legacy input format: {fmt}")
 
 
-def convert(rows: Iterable[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+def convert(
+    rows: Iterable[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     accepted: list[dict[str, Any]] = []
     sources: dict[str, dict[str, Any]] = {}
     rejected: list[dict[str, Any]] = []
@@ -324,11 +331,20 @@ def convert(rows: Iterable[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[
         try:
             case = normalize_row(raw)
         except (TypeError, ValueError) as exc:
-            rejected.append({"row": index, "record_id": raw.get("record_id"), "errors": [str(exc)]})
+            rejected.append(
+                {"row": index, "record_id": raw.get("record_id"), "errors": [str(exc)]}
+            )
             continue
         errors, warnings = core_validate(case, path=Path("legacy-input"), line_no=index)
         if errors:
-            rejected.append({"row": index, "record_id": case["record_id"], "errors": errors, "warnings": warnings})
+            rejected.append(
+                {
+                    "row": index,
+                    "record_id": case["record_id"],
+                    "errors": errors,
+                    "warnings": warnings,
+                }
+            )
             continue
         accepted.append(case)
         src = source_record(case)
@@ -369,7 +385,9 @@ def main() -> int:
     }
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        args.report.write_text(
+            json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        )
     print(json.dumps(report, sort_keys=True))
     return 1 if args.strict and rejected else 0
 
