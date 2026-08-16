@@ -85,19 +85,30 @@ def iter_jsonl(path: Path) -> list[dict[str, Any]]:
 def semantic_content_gaps(row: dict[str, Any]) -> list[str]:
     """Return missing historical-record dimensions without inventing substitutes."""
     gaps: list[str] = []
-    if not any(_present(row, k) for k in ("date_local", "event_date", "date_start", "date_end", "date_unknown_reason")):
+    if not any(
+        _present(row, key)
+        for key in ("date_local", "event_date", "date_start", "date_end", "date_unknown_reason")
+    ):
         gaps.append("date_exact_bounded_or_unknown_reason")
     if not any(
-        _present(row, k)
-        for k in ("location_name", "location_text", "municipality", "municipio", "location_unknown_reason")
+        _present(row, key)
+        for key in (
+            "location_name",
+            "location_text",
+            "municipality",
+            "municipio",
+            "location_unknown_reason",
+        )
     ):
         gaps.append("location_municipio_or_unknown_reason")
-    if not any(_present(row, k) for k in ("source_url", "source_ref")):
+    if not any(_present(row, key) for key in ("source_url", "source_ref")):
         gaps.append("source_url_or_source_ref")
     return gaps
 
 
-def core_validate(row: dict[str, Any], *, path: Path, line_no: int) -> tuple[list[str], list[str]]:
+def core_validate(
+    row: dict[str, Any], *, path: Path, line_no: int
+) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
 
@@ -124,16 +135,20 @@ def core_validate(row: dict[str, Any], *, path: Path, line_no: int) -> tuple[lis
         errors.append(f"{path}:{line_no}: record_type must be one of {sorted(RECORD_TYPES)}")
 
     if row.get("dedupe_status") not in DEDUPE_STATUSES:
-        errors.append(f"{path}:{line_no}: dedupe_status must be one of {sorted(DEDUPE_STATUSES)}")
+        errors.append(
+            f"{path}:{line_no}: dedupe_status must be one of {sorted(DEDUPE_STATUSES)}"
+        )
 
     if row.get("review_action") not in REVIEW_ACTIONS:
         errors.append(f"{path}:{line_no}: review_action must be one of {sorted(REVIEW_ACTIONS)}")
 
+    # Preserve the long-standing anti-generic-location invariant. Unknown geography
+    # is represented by location_unknown_reason, never by a generic location label.
     location = str(row.get("location_name") or "").strip().lower()
-    if location and location in GENERIC_LOCATIONS and not any(
-        _present(row, k) for k in ("municipality", "municipio", "location_unknown_reason")
-    ):
-        errors.append(f"{path}:{line_no}: location_name is too generic: {row.get('location_name')!r}")
+    if location in GENERIC_LOCATIONS:
+        errors.append(
+            f"{path}:{line_no}: location_name is too generic: {row.get('location_name')!r}"
+        )
 
     if row.get("record_type") == "master":
         case_id = row.get("case_id")
@@ -156,13 +171,21 @@ def core_validate(row: dict[str, Any], *, path: Path, line_no: int) -> tuple[lis
                     errors.append(f"{path}:{line_no}: confidence must be between 0 and 1")
 
     if row.get("record_type") == "candidate" and row.get("review_action") == "promote":
-        warnings.append(f"{path}:{line_no}: candidate marked promote; ensure promotion PR moves it to master ledger")
+        warnings.append(
+            f"{path}:{line_no}: candidate marked promote; ensure promotion PR moves it to master ledger"
+        )
 
     description = str(row.get("description", ""))
     if len(description) < 20:
         errors.append(f"{path}:{line_no}: description must be at least 20 characters")
 
-    for field in ("date_conflict", "location_conflict", "source_conflict", "identity_conflict", "narrative_conflict"):
+    for field in (
+        "date_conflict",
+        "location_conflict",
+        "source_conflict",
+        "identity_conflict",
+        "narrative_conflict",
+    ):
         if field in row and row[field] is not None and not isinstance(row[field], bool):
             errors.append(f"{path}:{line_no}: {field} must be boolean or null")
 
@@ -180,10 +203,12 @@ def schema_validate(rows: list[dict[str, Any]], schema: dict[str, Any] | None) -
     validator = Draft202012Validator(schema)
     errors: list[str] = []
     for row in rows:
-        clean = {k: v for k, v in row.items() if not k.startswith("__")}
+        clean = {key: value for key, value in row.items() if not key.startswith("__")}
         for exc in validator.iter_errors(clean):
             loc = ".".join(str(part) for part in exc.path) or "<root>"
-            errors.append(f"{row['__path']}:{row['__line']}: schema error at {loc}: {exc.message}")
+            errors.append(
+                f"{row['__path']}:{row['__line']}: schema error at {loc}: {exc.message}"
+            )
     return errors
 
 
@@ -199,7 +224,9 @@ def validate(paths: list[Path], schema_path: Path) -> int:
         rows = iter_jsonl(path)
         all_rows.extend(rows)
         for row in rows:
-            row_errors, row_warnings = core_validate(row, path=path, line_no=int(row["__line"]))
+            row_errors, row_warnings = core_validate(
+                row, path=path, line_no=int(row["__line"])
+            )
             errors.extend(row_errors)
             warnings.extend(row_warnings)
 
@@ -207,7 +234,10 @@ def validate(paths: list[Path], schema_path: Path) -> int:
     for row in all_rows:
         record_id = str(row.get("record_id", ""))
         if record_id in seen:
-            errors.append(f"duplicate record_id {record_id!r}: {seen[record_id]} and {row['__path']}:{row['__line']}")
+            errors.append(
+                f"duplicate record_id {record_id!r}: {seen[record_id]} and "
+                f"{row['__path']}:{row['__line']}"
+            )
         else:
             seen[record_id] = f"{row['__path']}:{row['__line']}"
 
@@ -252,7 +282,7 @@ def main() -> int:
         help="JSONL ledgers to validate",
     )
     args = parser.parse_args()
-    return validate([Path(p) for p in args.ledgers], Path(args.schema))
+    return validate([Path(path) for path in args.ledgers], Path(args.schema))
 
 
 if __name__ == "__main__":
