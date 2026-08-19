@@ -1,7 +1,9 @@
 // OVNIS display helpers. Evidence tier T1 (strongest) → T4 (weakest).
 
+import { lookup } from '@/lib/utils'
+
 const TIER_HEX = { T1: '#38bdf8', T2: '#818cf8', T3: '#a78bfa', T4: '#64748b' }
-export const tierHex = (t) => TIER_HEX[t] ?? '#64748b'
+export const tierHex = (t) => lookup(TIER_HEX, t, '#64748b')
 
 const CONFIDENCE_TONE = {
   high: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
@@ -11,7 +13,7 @@ const CONFIDENCE_TONE = {
   low: 'bg-red-500/15 text-red-300 border-red-500/30',
 }
 export const confidenceTone = (c) =>
-  CONFIDENCE_TONE[c] ?? 'bg-slate-500/15 text-slate-300 border-slate-500/30'
+  lookup(CONFIDENCE_TONE, c, 'bg-slate-500/15 text-slate-300 border-slate-500/30')
 
 export function locString(c) {
   const l = c.location || {}
