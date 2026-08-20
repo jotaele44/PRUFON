@@ -72,7 +72,7 @@
     "@testing-library/user-event": "^14.6.4",
     "@types/react": "^18.2.66",
     "@types/react-dom": "^18.2.22",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^6.0.5",
     "autoprefixer": "^10.5.4",
     "eslint": "^9.19.0",
     "eslint-plugin-react": "^7.37.4",
