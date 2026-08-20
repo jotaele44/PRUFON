@@ -4,7 +4,7 @@ import QueryState from '@/components/QueryState'
 import { Badge } from '@/components/ui/badge'
 import { tierBadge } from '@/lib/format'
 import { locString } from '@/lib/ovnis-format'
-import { cn } from '@/lib/utils'
+import { cn, lookup } from '@/lib/utils'
 
 // Map this app's candidate review-status vocabulary onto the canonical
 // federation status roles (see @pr-federation/react). Colors now come from the
@@ -42,7 +42,7 @@ export default function CandidateReview() {
             <span className="text-xs font-mono text-slate-300">{c.candidate_id}</span>
             {c.evidence_tier && <Badge variant="outline" className={cn('text-[10px]', tierBadge(c.evidence_tier))}>{c.evidence_tier}</Badge>}
             {(() => {
-              const { className: fdClass, ...toneAttrs } = federationTone(STATUS_ROLE[c.review_status] ?? 'neutral')
+              const { className: fdClass, ...toneAttrs } = federationTone(lookup(STATUS_ROLE, c.review_status, 'neutral'))
               return (
                 <span className={`${fdClass} text-[10px]`} {...toneAttrs}>
                   {c.review_status ?? 'pending'}
