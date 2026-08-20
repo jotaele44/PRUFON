@@ -84,7 +84,7 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
         with:
           node-version: "22"
 
@@ -151,7 +151,7 @@ jobs:
 
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/desktop-v')
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228
         with:
           files: |
             dist-desktop/PRII-OVNIS-*.zip

@@ -1,3 +1,4 @@
+import React from 'react'
 import { FederationEmptyState } from '@pr-federation/react'
 
 /**
