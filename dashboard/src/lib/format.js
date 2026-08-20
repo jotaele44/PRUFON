@@ -3,6 +3,8 @@
 // shadcn <Badge>.
 
 // Anomaly severity band. Seed uses hi / med / lo; tolerate high/medium/low too.
+import { lookup } from '@/lib/utils'
+
 const BAND = {
   hi: { label: 'High', hex: '#ef4444', badge: 'bg-red-500/15 text-red-300 border-red-500/30' },
   med: { label: 'Medium', hex: '#f59e0b', badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30' },
@@ -11,8 +13,8 @@ const BAND = {
 const BAND_ALIAS = { high: 'hi', medium: 'med', low: 'lo' }
 
 export function bandMeta(band) {
-  const key = BAND_ALIAS[band] ?? band
-  return BAND[key] ?? { label: band ?? '—', hex: '#64748b', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/30' }
+  const key = lookup(BAND_ALIAS, band, band)
+  return lookup(BAND, key, { label: band ?? '—', hex: '#64748b', badge: 'bg-slate-500/15 text-slate-300 border-slate-500/30' })
 }
 export const bandHex = (band) => bandMeta(band).hex
 
@@ -23,7 +25,7 @@ const TIER = {
   T3: 'bg-violet-500/15 text-violet-300 border-violet-500/30',
   T4: 'bg-slate-500/15 text-slate-300 border-slate-500/30',
 }
-export const tierBadge = (tier) => TIER[tier] ?? TIER.T4
+export const tierBadge = (tier) => lookup(TIER, tier, TIER.T4)
 
 // Source status.
 export function statusMeta(status) {

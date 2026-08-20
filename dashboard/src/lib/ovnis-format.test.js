@@ -204,3 +204,32 @@ describe('tier and confidence lookups', () => {
     expect(confidenceTone('unrated')).toContain('slate');
   });
 });
+
+describe('inherited keys do not leak through the lookup tables', () => {
+  // Every helper here indexes a plain object literal with a server-supplied key.
+  // A bare `MAP[key] ?? fallback` resolves these five strings through
+  // Object.prototype to something truthy, so the fallback never fires and the
+  // caller gets an object where it expected a class string — which clsx then
+  // drops entirely, because the prototype has no own enumerable keys, so the
+  // element loses its styling rather than degrading to slate.
+  //
+  // Cosmetic in this repo. Fixed because the identical pattern was a live crash
+  // in aguayluz-pr, where the key came from the URL rather than from data.
+  const INHERITED = ['__proto__', 'constructor', 'toString', 'valueOf', 'hasOwnProperty'];
+
+  it.each(INHERITED)('tierHex(%s) falls back to the slate hex', (key) => {
+    expect(tierHex(key)).toBe('#64748b');
+  });
+
+  it.each(INHERITED)('confidenceTone(%s) falls back to the slate badge', (key) => {
+    expect(typeof confidenceTone(key)).toBe('string');
+    expect(confidenceTone(key)).toBe(confidenceTone('unrated'));
+  });
+
+  it.each(INHERITED)('the bare index this replaced does NOT fall back for %s', (key) => {
+    // The premise, pinned. If this starts failing, JavaScript changed and the
+    // lookup() indirection stops earning its place.
+    const MAP = { real: 'value' };
+    expect(MAP[key] ?? 'fallback').not.toBe('fallback');
+  });
+});

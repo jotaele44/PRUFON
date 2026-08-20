@@ -102,3 +102,20 @@ describe('fmtDate', () => {
     expect(fmtDate('1975-3-4')).toBe('1975-3-4');
   });
 });
+
+describe('inherited keys do not leak through the band and tier tables', () => {
+  const INHERITED = ['__proto__', 'constructor', 'toString', 'valueOf', 'hasOwnProperty'];
+
+  it.each(INHERITED)('bandMeta(%s) returns a plain meta object', (key) => {
+    // bandMeta does two lookups in a row — BAND_ALIAS then BAND — so an unsafe
+    // first lookup feeds an object into the second as a key.
+    const meta = bandMeta(key);
+    expect(typeof meta.hex).toBe('string');
+    expect(typeof meta.badge).toBe('string');
+    expect(meta.hex).toBe('#64748b');
+  });
+
+  it.each(INHERITED)('tierBadge(%s) falls back to the T4 badge', (key) => {
+    expect(tierBadge(key)).toBe(tierBadge('T4'));
+  });
+});

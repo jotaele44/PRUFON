@@ -19,6 +19,7 @@ def _master_case(**overrides):
         "evidence_tier": "T2",
         "dedupe_status": "new",
         "review_action": "promote",
+        "case_confidence": 0.7,
         "municipality": "Cabo Rojo",
         "source_family": "news_report",
         "source_citation": "El Vocero",
