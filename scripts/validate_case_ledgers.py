@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Validate OVNIS JSONL case ledgers.
+"""Validate OVNIS/PRUFON JSONL case ledgers.
 
-This validator is intentionally dependency-light. If jsonschema is installed,
-it performs full JSON Schema validation. Without jsonschema, it still enforces
-core OVNIS control-plane gates.
+The validator preserves the existing ledger contract while also accepting the
+historical-record forms declared by CREATE_PRUFON_CASE_SCHEMA_IMPORT_PIPELINE:
+exact/partial dates, bounded dates, or an explicit unknown-date reason; and a
+specific location, municipio, or explicit unknown-location reason.
 """
 
 from __future__ import annotations
@@ -22,6 +23,8 @@ GENERIC_LOCATIONS = {
     "islandwide",
 }
 
+# Legacy candidate intake still imports this exact set. New legacy-record intake
+# uses the semantic gates in core_validate instead of fabricating these fields.
 REQUIRED = [
     "record_id",
     "record_type",
@@ -34,6 +37,15 @@ REQUIRED = [
     "review_action",
 ]
 
+BASE_REQUIRED = [
+    "record_id",
+    "record_type",
+    "description",
+    "evidence_tier",
+    "dedupe_status",
+    "review_action",
+]
+
 DATE_RE = re.compile(r"^[0-9]{4}(-[0-9]{2}){0,2}$")
 TIME_RE = re.compile(r"^([01][0-9]|2[0-3]):[0-5][0-9]$")
 
@@ -41,6 +53,10 @@ EVIDENCE_TIERS = {"T1", "T2", "T3", "T4"}
 RECORD_TYPES = {"candidate", "master", "duplicate", "update_existing", "echo_noise", "rejected"}
 DEDUPE_STATUSES = {"new", "possible_duplicate", "duplicate", "update_existing", "not_checked", "rejected"}
 REVIEW_ACTIONS = {"promote", "merge", "reject", "monitor", "pending"}
+
+
+def _present(row: dict[str, Any], key: str) -> bool:
+    return key in row and row[key] not in (None, "") and str(row[key]).strip() != ""
 
 
 def load_schema(schema_path: Path) -> dict[str, Any] | None:
@@ -66,17 +82,47 @@ def iter_jsonl(path: Path) -> list[dict[str, Any]]:
     return rows
 
 
-def core_validate(row: dict[str, Any], *, path: Path, line_no: int) -> tuple[list[str], list[str]]:
+def semantic_content_gaps(row: dict[str, Any]) -> list[str]:
+    """Return missing historical-record dimensions without inventing substitutes."""
+    gaps: list[str] = []
+    if not any(
+        _present(row, key)
+        for key in ("date_local", "event_date", "date_start", "date_end", "date_unknown_reason")
+    ):
+        gaps.append("date_exact_bounded_or_unknown_reason")
+    if not any(
+        _present(row, key)
+        for key in (
+            "location_name",
+            "location_text",
+            "municipality",
+            "municipio",
+            "location_unknown_reason",
+        )
+    ):
+        gaps.append("location_municipio_or_unknown_reason")
+    if not any(_present(row, key) for key in ("source_url", "source_ref")):
+        gaps.append("source_url_or_source_ref")
+    return gaps
+
+
+def core_validate(
+    row: dict[str, Any], *, path: Path, line_no: int
+) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
 
-    for field in REQUIRED:
-        if field not in row or row[field] in (None, ""):
+    for field in BASE_REQUIRED:
+        if not _present(row, field):
             errors.append(f"{path}:{line_no}: missing required field `{field}`")
 
-    date_local = str(row.get("date_local", ""))
-    if date_local and not DATE_RE.match(date_local):
-        errors.append(f"{path}:{line_no}: date_local must be YYYY, YYYY-MM, or YYYY-MM-DD")
+    for gap in semantic_content_gaps(row):
+        errors.append(f"{path}:{line_no}: missing required semantic dimension `{gap}`")
+
+    for field in ("date_local", "event_date", "date_start", "date_end"):
+        value = str(row.get(field) or "")
+        if value and not DATE_RE.match(value):
+            errors.append(f"{path}:{line_no}: {field} must be YYYY, YYYY-MM, or YYYY-MM-DD")
 
     time_local = row.get("time_local")
     if time_local not in (None, "") and not TIME_RE.match(str(time_local)):
@@ -89,14 +135,20 @@ def core_validate(row: dict[str, Any], *, path: Path, line_no: int) -> tuple[lis
         errors.append(f"{path}:{line_no}: record_type must be one of {sorted(RECORD_TYPES)}")
 
     if row.get("dedupe_status") not in DEDUPE_STATUSES:
-        errors.append(f"{path}:{line_no}: dedupe_status must be one of {sorted(DEDUPE_STATUSES)}")
+        errors.append(
+            f"{path}:{line_no}: dedupe_status must be one of {sorted(DEDUPE_STATUSES)}"
+        )
 
     if row.get("review_action") not in REVIEW_ACTIONS:
         errors.append(f"{path}:{line_no}: review_action must be one of {sorted(REVIEW_ACTIONS)}")
 
-    location = str(row.get("location_name", "")).strip().lower()
+    # Preserve the long-standing anti-generic-location invariant. Unknown geography
+    # is represented by location_unknown_reason, never by a generic location label.
+    location = str(row.get("location_name") or "").strip().lower()
     if location in GENERIC_LOCATIONS:
-        errors.append(f"{path}:{line_no}: location_name is too generic: {row.get('location_name')!r}")
+        errors.append(
+            f"{path}:{line_no}: location_name is too generic: {row.get('location_name')!r}"
+        )
 
     if row.get("record_type") == "master":
         case_id = row.get("case_id")
@@ -106,13 +158,36 @@ def core_validate(row: dict[str, Any], *, path: Path, line_no: int) -> tuple[lis
             errors.append(f"{path}:{line_no}: master record review_action must be promote or merge")
         if row.get("dedupe_status") == "not_checked":
             errors.append(f"{path}:{line_no}: master record cannot have dedupe_status=not_checked")
+        confidence = row.get("case_confidence", row.get("confidence"))
+        if confidence is None:
+            errors.append(f"{path}:{line_no}: master record requires case_confidence or confidence")
+        else:
+            try:
+                score = float(confidence)
+            except (TypeError, ValueError):
+                errors.append(f"{path}:{line_no}: confidence must be numeric")
+            else:
+                if not 0 <= score <= 1:
+                    errors.append(f"{path}:{line_no}: confidence must be between 0 and 1")
 
     if row.get("record_type") == "candidate" and row.get("review_action") == "promote":
-        warnings.append(f"{path}:{line_no}: candidate marked promote; ensure promotion PR moves it to master ledger")
+        warnings.append(
+            f"{path}:{line_no}: candidate marked promote; ensure promotion PR moves it to master ledger"
+        )
 
     description = str(row.get("description", ""))
     if len(description) < 20:
         errors.append(f"{path}:{line_no}: description must be at least 20 characters")
+
+    for field in (
+        "date_conflict",
+        "location_conflict",
+        "source_conflict",
+        "identity_conflict",
+        "narrative_conflict",
+    ):
+        if field in row and row[field] is not None and not isinstance(row[field], bool):
+            errors.append(f"{path}:{line_no}: {field} must be boolean or null")
 
     return errors, warnings
 
@@ -128,10 +203,12 @@ def schema_validate(rows: list[dict[str, Any]], schema: dict[str, Any] | None) -
     validator = Draft202012Validator(schema)
     errors: list[str] = []
     for row in rows:
-        clean = {k: v for k, v in row.items() if not k.startswith("__")}
+        clean = {key: value for key, value in row.items() if not key.startswith("__")}
         for exc in validator.iter_errors(clean):
             loc = ".".join(str(part) for part in exc.path) or "<root>"
-            errors.append(f"{row['__path']}:{row['__line']}: schema error at {loc}: {exc.message}")
+            errors.append(
+                f"{row['__path']}:{row['__line']}: schema error at {loc}: {exc.message}"
+            )
     return errors
 
 
@@ -147,7 +224,9 @@ def validate(paths: list[Path], schema_path: Path) -> int:
         rows = iter_jsonl(path)
         all_rows.extend(rows)
         for row in rows:
-            row_errors, row_warnings = core_validate(row, path=path, line_no=int(row["__line"]))
+            row_errors, row_warnings = core_validate(
+                row, path=path, line_no=int(row["__line"])
+            )
             errors.extend(row_errors)
             warnings.extend(row_warnings)
 
@@ -155,7 +234,10 @@ def validate(paths: list[Path], schema_path: Path) -> int:
     for row in all_rows:
         record_id = str(row.get("record_id", ""))
         if record_id in seen:
-            errors.append(f"duplicate record_id {record_id!r}: {seen[record_id]} and {row['__path']}:{row['__line']}")
+            errors.append(
+                f"duplicate record_id {record_id!r}: {seen[record_id]} and "
+                f"{row['__path']}:{row['__line']}"
+            )
         else:
             seen[record_id] = f"{row['__path']}:{row['__line']}"
 
@@ -187,11 +269,11 @@ def validate(paths: list[Path], schema_path: Path) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate OVNIS case ledgers")
+    parser = argparse.ArgumentParser(description="Validate OVNIS/PRUFON case ledgers")
     parser.add_argument(
         "--schema",
-        default="data/schemas/case.schema.json",
-        help="Path to OVNIS JSON Schema",
+        default="schemas/case_record.schema.json",
+        help="Path to canonical PRUFON JSON Schema",
     )
     parser.add_argument(
         "ledgers",
@@ -200,7 +282,7 @@ def main() -> int:
         help="JSONL ledgers to validate",
     )
     args = parser.parse_args()
-    return validate([Path(p) for p in args.ledgers], Path(args.schema))
+    return validate([Path(path) for path in args.ledgers], Path(args.schema))
 
 
 if __name__ == "__main__":
