@@ -1,3 +1,4 @@
+import React from 'react'
 import { useLocation } from 'react-router-dom'
 
 // Auth-stripped 404 (no auth lookup).

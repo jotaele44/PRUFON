@@ -1,3 +1,4 @@
+import React from 'react'
 import { useStats } from '@/lib/hooks'
 import QueryState from '@/components/QueryState'
 import {

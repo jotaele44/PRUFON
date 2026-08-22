@@ -1,3 +1,4 @@
+import React from 'react'
 import { federationTone, FederationEmptyState } from '@pr-federation/react'
 import { useCandidates } from '@/lib/hooks'
 import QueryState from '@/components/QueryState'
