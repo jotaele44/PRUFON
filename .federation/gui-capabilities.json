@@ -1,0 +1,348 @@
+{
+  "schema_version": "prii.gui-capability/v1",
+  "repository": "jotaele44/ovnis-pr",
+  "policy": {
+    "mode": "ratchet",
+    "baseline": ".federation/gui-parity-baseline.json",
+    "require_discoverable_gui": true,
+    "require_e2e": true,
+    "terminal_free_user_path": true
+  },
+  "discovery": {
+    "backend_roots": [
+      "server/backend"
+    ],
+    "production_roots": [
+      "maintenance",
+      "desktop"
+    ],
+    "analysis_roots": [
+      "scripts"
+    ],
+    "frontend_roots": [
+      "dashboard/src"
+    ],
+    "frontend_capability_roots": [
+      "dashboard/src/pages"
+    ],
+    "frontend_api_roots": [
+      "dashboard/src/lib/api.js"
+    ],
+    "route_files": [
+      "dashboard/src/App.jsx"
+    ],
+    "navigation_files": [
+      "dashboard/src/pages/Dashboard.jsx"
+    ],
+    "implicit_routes": [],
+    "exclude": [
+      "**/tests/**",
+      "**/*.test.*",
+      "**/*.spec.*",
+      "**/components/ui/**",
+      "scripts/check_gui_parity.py"
+    ]
+  },
+  "capabilities": [
+    {
+      "id": "case-research-dashboard",
+      "classification": "analysis",
+      "status": "active",
+      "requires_terminal": false,
+      "backend": {
+        "files": [
+          "server/backend/__init__.py",
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /cases",
+          "GET /cases/{case_id}",
+          "GET /candidates",
+          "GET /geojson",
+          "GET /stats",
+          "GET /search"
+        ],
+        "symbols": [
+          "server/backend/main.py:all_candidates",
+          "server/backend/main.py:all_cases",
+          "server/backend/main.py:as_float",
+          "server/backend/main.py:candidates",
+          "server/backend/main.py:case_detail",
+          "server/backend/main.py:cases",
+          "server/backend/main.py:data_status",
+          "server/backend/main.py:decade_from_date",
+          "server/backend/main.py:feature_from_case",
+          "server/backend/main.py:first_present",
+          "server/backend/main.py:geojson",
+          "server/backend/main.py:is_placeholder",
+          "server/backend/main.py:latest_geojson_path",
+          "server/backend/main.py:location_string",
+          "server/backend/main.py:matches_query",
+          "server/backend/main.py:normalize_candidate",
+          "server/backend/main.py:normalize_case",
+          "server/backend/main.py:read_jsonl",
+          "server/backend/main.py:release_geojson",
+          "server/backend/main.py:search",
+          "server/backend/main.py:stats",
+          "server/backend/main.py:stats_payload",
+          "server/backend/main.py:write_safe_int"
+        ]
+      },
+      "frontend": {
+        "routes": [
+          "*",
+          "/"
+        ],
+        "e2e_routes": [
+          "/"
+        ],
+        "components": [
+          "dashboard/src/App.jsx",
+          "dashboard/src/components/CandidateReview.jsx",
+          "dashboard/src/components/CaseDetail.jsx",
+          "dashboard/src/components/CaseGrid.jsx",
+          "dashboard/src/components/CaseMap.jsx",
+          "dashboard/src/components/ErrorBoundary.jsx",
+          "dashboard/src/components/QueryState.jsx",
+          "dashboard/src/components/StatsPanel.jsx",
+          "dashboard/src/lib/PageNotFound.jsx",
+          "dashboard/src/lib/api.js",
+          "dashboard/src/pages/Dashboard.jsx"
+        ],
+        "discoverability": [
+          "dashboard/src/pages/Dashboard.jsx"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_validate_case_ledgers.py",
+          "tests/test_import_candidates.py",
+          "tests/test_promote_candidate.py"
+        ],
+        "contract": [
+          "tests/test_gui_parity.py"
+        ],
+        "e2e": [
+          "dashboard/tests/gui-parity.spec.mjs"
+        ]
+      },
+      "candidate_ids": [
+        "gui_control:dashboard/src/components/ErrorBoundary.jsx:button#d1a223462e45",
+        "gui_control:dashboard/src/components/QueryState.jsx:button#5ca5ab4a31a6",
+        "gui_control:dashboard/src/lib/PageNotFound.jsx:button#b06ecd327bfa",
+        "gui_route:dashboard/src/App.jsx:*",
+        "python_module:server/backend/__init__.py",
+        "python_symbol:server/backend/main.py:all_candidates",
+        "python_symbol:server/backend/main.py:all_cases",
+        "python_symbol:server/backend/main.py:as_float",
+        "python_symbol:server/backend/main.py:candidates",
+        "python_symbol:server/backend/main.py:case_detail",
+        "python_symbol:server/backend/main.py:cases",
+        "python_symbol:server/backend/main.py:data_status",
+        "python_symbol:server/backend/main.py:decade_from_date",
+        "python_symbol:server/backend/main.py:feature_from_case",
+        "python_symbol:server/backend/main.py:first_present",
+        "python_symbol:server/backend/main.py:geojson",
+        "python_symbol:server/backend/main.py:is_placeholder",
+        "python_symbol:server/backend/main.py:latest_geojson_path",
+        "python_symbol:server/backend/main.py:location_string",
+        "python_symbol:server/backend/main.py:matches_query",
+        "python_symbol:server/backend/main.py:normalize_candidate",
+        "python_symbol:server/backend/main.py:normalize_case",
+        "python_symbol:server/backend/main.py:read_jsonl",
+        "python_symbol:server/backend/main.py:release_geojson",
+        "python_symbol:server/backend/main.py:search",
+        "python_symbol:server/backend/main.py:stats",
+        "python_symbol:server/backend/main.py:stats_payload",
+        "python_symbol:server/backend/main.py:write_safe_int"
+      ]
+    },
+    {
+      "id": "service-health",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Health probing supports launch and CI readiness rather than a separate user workflow.",
+      "backend": {
+        "files": [
+          "server/backend/main.py"
+        ],
+        "endpoints": [
+          "GET /health"
+        ],
+        "symbols": [
+          "server/backend/main.py:health"
+        ]
+      },
+      "tests": {
+        "backend": [
+          "tests/test_server_smoke.py"
+        ]
+      },
+      "candidate_ids": [
+        "python_symbol:server/backend/main.py:health"
+      ]
+    },
+    {
+      "id": "case-intake-pipeline",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Human-gated case-intake pipeline (dedupe, score, import legacy PRUFON rows, promote one reviewed candidate at a time, validate ledgers, adapt the Centinelas cross-repo signal feed) that feeds case-research-dashboard's data; run as CLI steps outside the GUI, not a separate user workflow.",
+      "candidate_ids": [
+        "analysis_module:scripts/dedupe_candidates.py",
+        "analysis_module:scripts/import_candidates.py",
+        "analysis_module:scripts/import_prufon_legacy.py",
+        "analysis_module:scripts/ingest_centinelas_dispatch.py",
+        "analysis_module:scripts/promote_candidate.py",
+        "analysis_module:scripts/score_candidates.py",
+        "analysis_module:scripts/validate_case_ledgers.py",
+        "analysis_symbol:scripts/dedupe_candidates.py:date_score",
+        "analysis_symbol:scripts/dedupe_candidates.py:haversine_km",
+        "analysis_symbol:scripts/dedupe_candidates.py:iter_jsonl",
+        "analysis_symbol:scripts/dedupe_candidates.py:location_score",
+        "analysis_symbol:scripts/dedupe_candidates.py:main",
+        "analysis_symbol:scripts/dedupe_candidates.py:match_score",
+        "analysis_symbol:scripts/dedupe_candidates.py:source_score",
+        "analysis_symbol:scripts/dedupe_candidates.py:text_score",
+        "analysis_symbol:scripts/import_candidates.py:existing_record_ids",
+        "analysis_symbol:scripts/import_candidates.py:main",
+        "analysis_symbol:scripts/import_candidates.py:missing_required",
+        "analysis_symbol:scripts/import_candidates.py:normalize",
+        "analysis_symbol:scripts/import_candidates.py:route_row",
+        "analysis_symbol:scripts/import_candidates.py:run",
+        "analysis_symbol:scripts/import_candidates.py:write_ledger",
+        "analysis_symbol:scripts/import_prufon_legacy.py:convert",
+        "analysis_symbol:scripts/import_prufon_legacy.py:main",
+        "analysis_symbol:scripts/import_prufon_legacy.py:normalize_row",
+        "analysis_symbol:scripts/import_prufon_legacy.py:read_csv",
+        "analysis_symbol:scripts/import_prufon_legacy.py:read_markdown",
+        "analysis_symbol:scripts/import_prufon_legacy.py:read_rows",
+        "analysis_symbol:scripts/import_prufon_legacy.py:read_xlsx",
+        "analysis_symbol:scripts/import_prufon_legacy.py:source_record",
+        "analysis_symbol:scripts/import_prufon_legacy.py:write_jsonl",
+        "analysis_symbol:scripts/ingest_centinelas_dispatch.py:coerce_date_local",
+        "analysis_symbol:scripts/ingest_centinelas_dispatch.py:extract_signals",
+        "analysis_symbol:scripts/ingest_centinelas_dispatch.py:main",
+        "analysis_symbol:scripts/ingest_centinelas_dispatch.py:resolve_pr_location",
+        "analysis_symbol:scripts/ingest_centinelas_dispatch.py:run",
+        "analysis_symbol:scripts/ingest_centinelas_dispatch.py:signal_to_candidate_row",
+        "analysis_symbol:scripts/promote_candidate.py:PromotionError",
+        "analysis_symbol:scripts/promote_candidate.py:append_master",
+        "analysis_symbol:scripts/promote_candidate.py:build_master_row",
+        "analysis_symbol:scripts/promote_candidate.py:main",
+        "analysis_symbol:scripts/promote_candidate.py:promote",
+        "analysis_symbol:scripts/promote_candidate.py:rewrite_candidates_without",
+        "analysis_symbol:scripts/score_candidates.py:iter_jsonl",
+        "analysis_symbol:scripts/score_candidates.py:main",
+        "analysis_symbol:scripts/score_candidates.py:score_row",
+        "analysis_symbol:scripts/score_candidates.py:write_csv",
+        "analysis_symbol:scripts/validate_case_ledgers.py:core_validate",
+        "analysis_symbol:scripts/validate_case_ledgers.py:iter_jsonl",
+        "analysis_symbol:scripts/validate_case_ledgers.py:load_schema",
+        "analysis_symbol:scripts/validate_case_ledgers.py:main",
+        "analysis_symbol:scripts/validate_case_ledgers.py:schema_validate",
+        "analysis_symbol:scripts/validate_case_ledgers.py:semantic_content_gaps",
+        "analysis_symbol:scripts/validate_case_ledgers.py:validate",
+        "cli_surface:scripts/dedupe_candidates.py",
+        "cli_surface:scripts/import_candidates.py",
+        "cli_surface:scripts/import_prufon_legacy.py",
+        "cli_surface:scripts/ingest_centinelas_dispatch.py",
+        "cli_surface:scripts/promote_candidate.py",
+        "cli_surface:scripts/score_candidates.py",
+        "cli_surface:scripts/validate_case_ledgers.py"
+      ],
+      "tests": {
+        "backend": [
+          "tests/test_prufon_legacy_contract.py",
+          "tests/test_ingest_centinelas_dispatch.py"
+        ]
+      }
+    },
+    {
+      "id": "release-export-pipeline",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Release snapshot, offline-dashboard bundle, and federation canonical-stream export tooling; run as build/release steps, not through the GUI.",
+      "candidate_ids": [
+        "analysis_module:scripts/build_release.py",
+        "analysis_module:scripts/build_snapshot.py",
+        "analysis_module:scripts/federation_export.py",
+        "analysis_symbol:scripts/build_release.py:build_csv",
+        "analysis_symbol:scripts/build_release.py:build_geojson",
+        "analysis_symbol:scripts/build_release.py:load_master",
+        "analysis_symbol:scripts/build_release.py:main",
+        "analysis_symbol:scripts/build_snapshot.py:main",
+        "analysis_symbol:scripts/federation_export.py:build_streams",
+        "analysis_symbol:scripts/federation_export.py:main",
+        "analysis_symbol:scripts/federation_export.py:write_package",
+        "cli_surface:scripts/build_release.py",
+        "cli_surface:scripts/federation_export.py"
+      ],
+      "tests": {
+        "backend": [
+          "tests/test_federation_export.py"
+        ]
+      }
+    },
+    {
+      "id": "ops-validation-scripts",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "CI/maintenance validation tooling (the audit-first maintenance-layer runner and the PR federation grid CSV validator) run in automation.",
+      "candidate_ids": [
+        "analysis_module:scripts/run_maintenance.py",
+        "analysis_module:scripts/validate_pr_grid.py",
+        "analysis_symbol:scripts/run_maintenance.py:main",
+        "analysis_symbol:scripts/validate_pr_grid.py:main",
+        "analysis_symbol:scripts/validate_pr_grid.py:validate_grid",
+        "cli_surface:scripts/run_maintenance.py",
+        "cli_surface:scripts/validate_pr_grid.py"
+      ]
+    },
+    {
+      "id": "desktop-launcher",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Desktop wrapper setup/launch shim (creates a private venv, then launches the same backend in a native window); not a separate GUI workflow from the dashboard it wraps.",
+      "candidate_ids": [
+        "python_module:desktop/__init__.py",
+        "python_module:desktop/app_server.py",
+        "python_module:desktop/config.py",
+        "python_module:desktop/launch.py",
+        "python_module:desktop/setup.py",
+        "python_symbol:desktop/launch.py:main",
+        "python_symbol:desktop/setup.py:is_complete",
+        "python_symbol:desktop/setup.py:main",
+        "python_symbol:desktop/setup.py:run",
+        "python_symbol:desktop/setup.py:setup_frontend",
+        "python_symbol:desktop/setup.py:setup_python",
+        "python_symbol:desktop/setup.py:venv_python"
+      ]
+    },
+    {
+      "id": "maintenance-adapters",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "OVNIS-specific maintenance-layer adapter checks (case provenance, unknown-value inference) run by the maintenance CLI, not GUI-facing.",
+      "candidate_ids": [
+        "python_module:maintenance/__init__.py",
+        "python_module:maintenance/adapters/__init__.py",
+        "python_module:maintenance/adapters/local.py",
+        "python_symbol:maintenance/adapters/local.py:check_case_provenance",
+        "python_symbol:maintenance/adapters/local.py:check_unknown_values_not_inferred",
+        "python_symbol:maintenance/adapters/local.py:run_checks"
+      ],
+      "tests": {
+        "backend": [
+          "tests/test_maintenance.py"
+        ]
+      }
+    }
+  ],
+  "exceptions": []
+}
