@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import maplibregl from 'maplibre-gl'
+import * as maplibregl from 'maplibre-gl'
 
 // MapLibre map of OVNIS sighting cases. Renders the release GeoJSON directly
 // (Point features colored by evidence tier). Same wrapper pattern as the
