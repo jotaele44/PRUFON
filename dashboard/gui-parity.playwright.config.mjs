@@ -44,7 +44,7 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "python -m uvicorn server.backend.main:app --host 127.0.0.1 --port 8000",
+      command: "python3 -m uvicorn server.backend.main:app --host 127.0.0.1 --port 8000",
       cwd: repositoryRoot,
       env: {
         ...process.env,
