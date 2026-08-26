@@ -269,6 +269,7 @@
         "analysis_module:scripts/build_release.py",
         "analysis_module:scripts/build_snapshot.py",
         "analysis_module:scripts/federation_export.py",
+        "analysis_module:scripts/prii_export_utils.py",
         "analysis_symbol:scripts/build_release.py:build_csv",
         "analysis_symbol:scripts/build_release.py:build_geojson",
         "analysis_symbol:scripts/build_release.py:load_master",
@@ -277,6 +278,9 @@
         "analysis_symbol:scripts/federation_export.py:build_streams",
         "analysis_symbol:scripts/federation_export.py:main",
         "analysis_symbol:scripts/federation_export.py:write_package",
+        "analysis_symbol:scripts/prii_export_utils.py:fid",
+        "analysis_symbol:scripts/prii_export_utils.py:norm",
+        "analysis_symbol:scripts/prii_export_utils.py:sha256",
         "cli_surface:scripts/build_release.py",
         "cli_surface:scripts/federation_export.py"
       ],
