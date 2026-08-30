@@ -20,6 +20,17 @@ Its federation alias is `ovnis-pr`. It should preserve case provenance, chronolo
 | Primary function | Historical case corpus and review pipeline |
 | Jurisdiction focus | Puerto Rico |
 
+## Desktop app
+
+Double-click launchers at the repo root start the local desktop app (first run
+installs dependencies, later runs work offline):
+
+- `PRII-OVNIS.command` (macOS) / `PRII-OVNIS.app`
+- `PRII-OVNIS.bat` (Windows)
+- `PRII-OVNIS.sh` (Linux)
+
+See [`desktop/README.md`](desktop/README.md) for details.
+
 ## Setup / Development
 
 Requires **Python 3.10+** (CI's `validate` job tests 3.10–3.12; the `OVNIS CI`
@@ -32,14 +43,17 @@ cd ovnis-pr
 python3 -m venv .venv
 source .venv/bin/activate
 
-# CI also needs the backend deps to run the suite:
+# requirements.txt pins the shared prii-* packages to an immutable TheHub git
+# SHA, fetched straight from GitHub — no sibling ../thehub-pr checkout needed
+# (CI asserts one is absent). CI also needs the backend deps to run the suite:
 python -m pip install -r requirements.txt httpx -r server/backend/requirements.txt
 ```
 
-> `requirements.txt` carries the shared federation packages (`prii-maintenance`,
-> `prii-export-utils`) via a pinned `git+https` reference to `thehub-pr` — no
-> sibling checkout needed. Bumping the pin in `thehub-pr` is a one-line,
-> one-PR change per producer.
+> `requirements.txt` pins the shared federation packages (`prii-maintenance`,
+> `prii-export-utils`) to an immutable git SHA in `thehub-pr`
+> (`git+...@f2b8176...`), not a live local path. Picking up a change made in
+> the hub requires bumping that pinned SHA here and regenerating
+> `requirements.lock` — it does not propagate automatically.
 
 Run the checks CI runs:
 
@@ -48,8 +62,6 @@ python3 scripts/validate_case_ledgers.py            # ledger integrity
 python -m pytest -q                                 # unit tests
 python3 scripts/federation_export.py --mode test    # canonical export smoke
 ```
-
-For the double-click desktop app, see [`desktop/README.md`](desktop/README.md).
 
 ## Operating doctrine
 
