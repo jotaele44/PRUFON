@@ -1,0 +1,127 @@
+{
+  "by_copy_status": {
+    "NOT_REQUESTED": 3131
+  },
+  "by_hash_status": {
+    "HASH_DEFERRED": 3131
+  },
+  "by_source": {
+    "app_support_ovnis": 2,
+    "base44_ovnis_pr_migrated": 99,
+    "base44_ovnis_pr_zip": 1,
+    "browser_cert_ovnis": 4,
+    "desktop_prufon_cases": 1,
+    "developer_prufon_bundle": 1,
+    "developer_prufon_chatgpt_pr": 49,
+    "documents_coding_war_gov_release03": 11,
+    "documents_prufon": 664,
+    "documents_reference_intro": 1,
+    "downloads_nara_pr_ufo": 1,
+    "downloads_ovnis_skill": 1,
+    "fed_repos_ovnis_pr": 261,
+    "fed_repos_ovnis_pr_87_maplibre": 244,
+    "financial_prufon": 99,
+    "github_ovnis_icon": 1,
+    "loose_preservation_20260810_ovnis": 9,
+    "loose_preservation_20260810_prufon": 10,
+    "loose_preservation_20260825_ovnis_identity": 869,
+    "loose_preservation_20260826_dirty_ovnis": 6,
+    "loose_preservation_20260826_freeze_ovnis": 9,
+    "preservation_phase0_ovnis": 788
+  },
+  "bytes": 33981935989,
+  "claim_scope": "PRUFON/OVNIS filesystem source inventory and optional raw copy manifest",
+  "files": 3131,
+  "identity_note": "Source folder taxonomy is not canonical identity; semantic case identity remains unresolved until rows are ingested and deduplicated by stronger evidence.",
+  "over_100mb": 49,
+  "sources": [
+    {
+      "path": "/Users/jotaele/Documents/PRUFON",
+      "source_id": "documents_prufon"
+    },
+    {
+      "path": "/Users/jotaele/Developer/PRUFON/chatgpt-pr",
+      "source_id": "developer_prufon_chatgpt_pr"
+    },
+    {
+      "path": "/Users/jotaele/Desktop/PRUFON_mentioned_cases_extracted_deduped.csv",
+      "source_id": "desktop_prufon_cases"
+    },
+    {
+      "path": "/Users/jotaele/Documents/Data/Reference & Documentation/Introduction to PRUFON.docx",
+      "source_id": "documents_reference_intro"
+    },
+    {
+      "path": "/Users/jotaele/Documents/Financials/Consolidated/financial",
+      "source_id": "financial_prufon"
+    },
+    {
+      "path": "/Users/jotaele/Downloads/nara_puerto_rico_ufo_records.csv",
+      "source_id": "downloads_nara_pr_ufo"
+    },
+    {
+      "path": "/Users/jotaele/Downloads/Coding Output/skills/OVNIS_PR_SKILL.md",
+      "source_id": "downloads_ovnis_skill"
+    },
+    {
+      "path": "/Users/jotaele/Documents/GitHub/Ovnis icon.png",
+      "source_id": "github_ovnis_icon"
+    },
+    {
+      "path": "/Users/jotaele/Documents/Coding/war_gov_release03_patched_pack",
+      "source_id": "documents_coding_war_gov_release03"
+    },
+    {
+      "path": "/Users/jotaele/Developer/prii-base44-removal-kit/migrated/OVNIS-PR",
+      "source_id": "base44_ovnis_pr_migrated"
+    },
+    {
+      "path": "/Users/jotaele/Developer/prii-base44-removal-kit/migrated/OVNIS-PR.zip",
+      "source_id": "base44_ovnis_pr_zip"
+    },
+    {
+      "path": "/Users/jotaele/Library/Application Support/OVNIS",
+      "source_id": "app_support_ovnis"
+    },
+    {
+      "path": "/Users/jotaele/Applications/MAC_UI_BROWSER_CERTIFICATION_v0_3/results/screenshots/ovnis-pr",
+      "source_id": "browser_cert_ovnis"
+    },
+    {
+      "path": "/Users/jotaele/fed-repos/ovnis-pr",
+      "source_id": "fed_repos_ovnis_pr"
+    },
+    {
+      "path": "/Users/jotaele/fed-repos/ovnis-pr-87-maplibre",
+      "source_id": "fed_repos_ovnis_pr_87_maplibre"
+    },
+    {
+      "path": "/Users/jotaele/fed-repos/_FEDERATION_PHASE0_20260812T222741Z",
+      "source_id": "preservation_phase0_ovnis"
+    },
+    {
+      "path": "/Users/jotaele/fed-repos/_loose_checkout_preservation/20260810T015420Z/Developer__PRUFON",
+      "source_id": "loose_preservation_20260810_prufon"
+    },
+    {
+      "path": "/Users/jotaele/fed-repos/_loose_checkout_preservation/20260810T015420Z/Developer__PRUFON__ovnis-pr",
+      "source_id": "loose_preservation_20260810_ovnis"
+    },
+    {
+      "path": "/Users/jotaele/fed-repos/_loose_checkout_preservation/20260825T163019Z-ovnis-identity-repair",
+      "source_id": "loose_preservation_20260825_ovnis_identity"
+    },
+    {
+      "path": "/Users/jotaele/fed-repos/_loose_checkout_preservation/20260826T000404Z-pre-disposition-dirty-worktrees/ovnis-pr",
+      "source_id": "loose_preservation_20260826_dirty_ovnis"
+    },
+    {
+      "path": "/Users/jotaele/fed-repos/_loose_checkout_preservation/20260826T0105Z-canonical-freeze-inventory/ovnis-pr",
+      "source_id": "loose_preservation_20260826_freeze_ovnis"
+    },
+    {
+      "path": "/Users/jotaele/Developer/_git-cleanup-backups-20260802/PRUFON.bundle",
+      "source_id": "developer_prufon_bundle"
+    }
+  ]
+}

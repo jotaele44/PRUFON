@@ -119,6 +119,10 @@ dashboard/export-standalone/
 desktop/.running
 dist-smoke/
 
+# Local raw PRUFON/OVNIS source consolidation payloads can be very large.
+# Keep manifests tracked; copy raw bytes locally only after LFS/storage policy is explicit.
+data/legacy_prufon/raw/
+
 # Coverage artifacts (pytest --cov / coverage.py)
 .coverage
 .coverage.*
