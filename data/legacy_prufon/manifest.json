@@ -1,6 +1,8 @@
 {
+  "allocated_bytes": 733437952,
   "by_copy_status": {
-    "NOT_REQUESTED": 3131
+    "COPY_SKIPPED_SPARSE_OR_PLACEHOLDER": 489,
+    "EXISTS_SAME_SIZE": 2642
   },
   "by_hash_status": {
     "HASH_DEFERRED": 3131
@@ -30,6 +32,10 @@
     "preservation_phase0_ovnis": 788
   },
   "bytes": 33981935989,
+  "bytes_by_copy_status": {
+    "COPY_SKIPPED_SPARSE_OR_PLACEHOLDER": 32337471341,
+    "EXISTS_SAME_SIZE": 1644464648
+  },
   "claim_scope": "PRUFON/OVNIS filesystem source inventory and optional raw copy manifest",
   "files": 3131,
   "identity_note": "Source folder taxonomy is not canonical identity; semantic case identity remains unresolved until rows are ingested and deduplicated by stronger evidence.",

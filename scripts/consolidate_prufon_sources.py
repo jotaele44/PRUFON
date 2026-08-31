@@ -88,14 +88,29 @@ def destination_for(dest_root: Path, source_id: str, root: Path, path: Path) -> 
     return dest_root / source_id / relative
 
 
-def copy_file(source: Path, destination: Path) -> str:
+def copy_file(source: Path, destination: Path, max_copy_bytes: int | None = None) -> str:
+    source_stat = source.stat()
     if destination.exists():
-        if destination.is_file() and source.stat().st_size == destination.stat().st_size:
+        if destination.is_file() and source_stat.st_size == destination.stat().st_size:
             return "EXISTS_SAME_SIZE"
-        raise FileExistsError(f"destination collision with different size: {destination}")
+        return "EXISTS_DIFFERENT_SIZE"
+    if max_copy_bytes is not None and source_stat.st_size > max_copy_bytes:
+        return "COPY_SKIPPED_OVER_LIMIT"
     destination.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, destination)
     return "COPIED"
+
+
+def allocated_bytes(stat_result: Any) -> int | None:
+    blocks = getattr(stat_result, "st_blocks", None)
+    if blocks is None:
+        return None
+    return int(blocks) * 512
+
+
+def is_sparse_or_placeholder(stat_result: Any) -> bool:
+    allocated = allocated_bytes(stat_result)
+    return allocated is not None and int(stat_result.st_size) > 0 and allocated < int(stat_result.st_size)
 
 
 def build_record(
@@ -106,14 +121,19 @@ def build_record(
     dest_root: Path,
     copy: bool,
     max_hash_bytes: int | None,
+    max_copy_bytes: int | None,
     no_hash: bool,
+    skip_sparse_sources: bool,
 ) -> dict[str, Any]:
     stat = source_path.stat()
     sha256, hash_status = maybe_hash(source_path, max_hash_bytes, no_hash=no_hash)
     destination_path = destination_for(dest_root, source_id, source_root, source_path)
     copy_status = "NOT_REQUESTED"
     if copy:
-        copy_status = copy_file(source_path, destination_path)
+        if skip_sparse_sources and is_sparse_or_placeholder(stat) and not destination_path.exists():
+            copy_status = "COPY_SKIPPED_SPARSE_OR_PLACEHOLDER"
+        else:
+            copy_status = copy_file(source_path, destination_path, max_copy_bytes=max_copy_bytes)
     return {
         "source_id": source_id,
         "source_root": str(source_root),
@@ -123,6 +143,7 @@ def build_record(
         else str(source_path.relative_to(source_root)),
         "destination_path": str(destination_path),
         "size_bytes": stat.st_size,
+        "allocated_bytes": allocated_bytes(stat),
         "mtime_ns": stat.st_mtime_ns,
         "sha256": sha256,
         "hash_status": hash_status,
@@ -142,6 +163,12 @@ def write_summary(path: Path, rows: list[dict[str, Any]], sources: list[tuple[st
     by_source = Counter(row["source_id"] for row in rows)
     by_hash_status = Counter(row["hash_status"] for row in rows)
     by_copy_status = Counter(row["copy_status"] for row in rows)
+    bytes_by_copy_status: dict[str, int] = {}
+    for row in rows:
+        copy_status = str(row["copy_status"])
+        bytes_by_copy_status[copy_status] = bytes_by_copy_status.get(copy_status, 0) + int(
+            row["size_bytes"]
+        )
     payload = {
         "claim_scope": "PRUFON/OVNIS filesystem source inventory and optional raw copy manifest",
         "identity_note": (
@@ -151,9 +178,13 @@ def write_summary(path: Path, rows: list[dict[str, Any]], sources: list[tuple[st
         "sources": [{"source_id": source_id, "path": str(path)} for source_id, path in sources],
         "files": len(rows),
         "bytes": sum(int(row["size_bytes"]) for row in rows),
+        "allocated_bytes": sum(
+            int(row["allocated_bytes"]) for row in rows if row["allocated_bytes"] is not None
+        ),
         "by_source": dict(sorted(by_source.items())),
         "by_hash_status": dict(sorted(by_hash_status.items())),
         "by_copy_status": dict(sorted(by_copy_status.items())),
+        "bytes_by_copy_status": dict(sorted(bytes_by_copy_status.items())),
         "over_100mb": sum(1 for row in rows if int(row["size_bytes"]) > 100 * 1024 * 1024),
     }
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -181,6 +212,16 @@ def main() -> int:
         help="skip hashing files larger than this byte count; omit to hash every file",
     )
     parser.add_argument(
+        "--max-copy-bytes",
+        type=int,
+        help="skip copying files larger than this byte count; omit to copy every file",
+    )
+    parser.add_argument(
+        "--skip-sparse-sources",
+        action="store_true",
+        help="skip copying sources whose allocated bytes are smaller than logical size",
+    )
+    parser.add_argument(
         "--progress-every",
         type=int,
         default=0,
@@ -201,7 +242,9 @@ def main() -> int:
                     dest_root=args.dest_root,
                     copy=args.copy,
                     max_hash_bytes=args.max_hash_bytes,
+                    max_copy_bytes=args.max_copy_bytes,
                     no_hash=args.no_hash,
+                    skip_sparse_sources=args.skip_sparse_sources,
                 )
             )
             if args.progress_every and len(rows) % args.progress_every == 0:
