@@ -1,5 +1,10 @@
 # OVNIS-PR — Normalized Road to 100 Status
 
+> AUDIT_ONLY: This is a preserved 2026-07-27 normalization snapshot from a stale
+> branch. It does not certify the current repository head; current consolidation
+> disposition is tracked in
+> `docs/consolidation/ovnis_consolidation_disposition_2026-08-31.md`.
+
 **Governance version:** `road_to_100_normalization_v0_2`  
 **Audit date:** 2026-07-27  
 **Evidence boundary:** repository `main`, canonical `federation.json`, `docs/ROAD_TO_100.md`, `docs/MATURITY_AUDIT.md`, and recorded executed baselines.  
