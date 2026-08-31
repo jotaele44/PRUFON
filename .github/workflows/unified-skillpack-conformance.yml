@@ -13,5 +13,5 @@ jobs:
         with: {fetch-depth: 0}
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
-      - run: python tools/validate_unified_skillpacks.py --root .
+      - run: python tools/validate_unified_skillpacks.py --root . --enforce-change-scope
       - run: python -m unittest discover -s tests -p 'test_unified_skillpack_conformance.py'

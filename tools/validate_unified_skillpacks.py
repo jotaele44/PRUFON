@@ -11,7 +11,7 @@ def run_git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
 def is_allowed_path(path: str, allowed_paths: list[str]) -> bool:
     return any(path == allowed or (allowed.endswith("/") and path.startswith(allowed)) for allowed in allowed_paths)
 
-def validate(root: Path) -> dict[str, Any]:
+def validate(root: Path, enforce_change_scope: bool = False) -> dict[str, Any]:
     skillpack_root=root/".claude"/"skillpacks"; errors=[]
     binding=load_json(skillpack_root/"BINDING.json"); manifest=load_json(skillpack_root/"MANIFEST.json"); legacy=load_json(skillpack_root/"LEGACY_COMPATIBILITY.json")
     skill_bytes=(skillpack_root/"SKILL.md").read_bytes(); skill_text=skill_bytes.decode("utf-8")
@@ -56,7 +56,7 @@ def validate(root: Path) -> dict[str, Any]:
         if base_obj.returncode != 0:
             if is_shallow: checks.append("git_history_deferred_shallow_checkout")
             else: errors.append("pinned base commit object is unavailable")
-        else:
+        elif enforce_change_scope:
             if run_git(root,"merge-base","--is-ancestor",base,"HEAD").returncode != 0: errors.append("pinned base is not an ancestor of HEAD")
             diff=run_git(root,"diff","--name-only",f"{base}..HEAD")
             if diff.returncode != 0: errors.append("git diff failed")
@@ -69,8 +69,10 @@ def validate(root: Path) -> dict[str, Any]:
                     for p in changed:
                         if p==surface or p.startswith(prefix): errors.append(f"legacy surface was modified: {surface}")
             checks += ["exact_base_ancestry","change_scope","legacy_non_modification"]
+        else:
+            checks.append("exact_base_available")
     return {"schema_version":"1.0","repository":binding["repository"],"pinned_base_commit":binding["pinned_base_commit"],"status":"success" if not errors else "failed","checks":checks,"errors":errors,"capability_count":manifest["capability_count"],"module_count":manifest["module_count"]}
 
 def main() -> int:
-    p=argparse.ArgumentParser(); p.add_argument("--root",default="."); args=p.parse_args(); result=validate(Path(args.root).resolve()); print(json.dumps(result,indent=2,sort_keys=True)); return 0 if result["status"]=="success" else 1
+    p=argparse.ArgumentParser(); p.add_argument("--root",default="."); p.add_argument("--enforce-change-scope",action="store_true"); args=p.parse_args(); result=validate(Path(args.root).resolve(),enforce_change_scope=args.enforce_change_scope); print(json.dumps(result,indent=2,sort_keys=True)); return 0 if result["status"]=="success" else 1
 if __name__=="__main__": raise SystemExit(main())
