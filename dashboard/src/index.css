@@ -1,42 +1,115 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-@config "../tailwind.config.js";
+@import "tailwindcss";
+@plugin "tailwindcss-animate";
 
-@layer base {
-  :root {
-    --background: 215 28% 7%;
-    --foreground: 195 100% 95%;
-    --card: 215 25% 10%;
-    --card-foreground: 195 100% 90%;
-    --popover: 215 25% 10%;
-    --popover-foreground: 195 100% 90%;
-    --primary: 187 100% 50%;
-    --primary-foreground: 215 28% 7%;
-    --secondary: 215 20% 16%;
-    --secondary-foreground: 195 80% 85%;
-    --muted: 215 20% 14%;
-    --muted-foreground: 215 15% 50%;
-    --accent: 170 100% 40%;
-    --accent-foreground: 215 28% 7%;
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 215 20% 18%;
-    --input: 215 20% 16%;
-    --ring: 187 100% 50%;
-    --radius: 0.5rem;
-    --font-heading: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-body: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+/* Tailwind v4's `@config` bridge for a legacy v3 JS config does not reliably merge
+   custom theme keys ahead of `@apply`/utility generation when combined with the old
+   `@tailwind base/components/utilities` directives — confirmed by `@apply border-border`
+   failing to resolve and by numeric spacing utilities (p-2, gap-4, min-h-0, top-2, ...)
+   being silently dropped from the compiled bundle. `@theme` below is the native v4
+   replacement for tailwind.config.js's theme.extend. */
+@custom-variant dark (&:where(.dark, .dark *));
 
-    /* Custom tokens */
-    --glow-cyan: 0 0 12px rgba(0, 229, 255, 0.4);
-    --glow-teal: 0 0 12px rgba(0, 191, 165, 0.4);
-    --glow-border: rgba(0, 229, 255, 0.25);
-    --panel-bg: rgba(15, 25, 35, 0.95);
-    --grid-color: rgba(0, 229, 255, 0.04);
-  }
+:root {
+  --background: 215 28% 7%;
+  --foreground: 195 100% 95%;
+  --card: 215 25% 10%;
+  --card-foreground: 195 100% 90%;
+  --popover: 215 25% 10%;
+  --popover-foreground: 195 100% 90%;
+  --primary: 187 100% 50%;
+  --primary-foreground: 215 28% 7%;
+  --secondary: 215 20% 16%;
+  --secondary-foreground: 195 80% 85%;
+  --muted: 215 20% 14%;
+  --muted-foreground: 215 15% 50%;
+  --accent: 170 100% 40%;
+  --accent-foreground: 215 28% 7%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 215 20% 18%;
+  --input: 215 20% 16%;
+  --ring: 187 100% 50%;
+  --chart-1: 187 100% 50%;
+  --chart-2: 170 100% 40%;
+  --chart-3: 215 20% 50%;
+  --chart-4: 195 80% 60%;
+  --chart-5: 0 72% 51%;
+  --sidebar-background: 215 25% 10%;
+  --sidebar-foreground: 195 100% 90%;
+  --sidebar-primary: 187 100% 50%;
+  --sidebar-primary-foreground: 215 28% 7%;
+  --sidebar-accent: 170 100% 40%;
+  --sidebar-accent-foreground: 215 28% 7%;
+  --sidebar-border: 215 20% 18%;
+  --sidebar-ring: 187 100% 50%;
+  --radius: 0.5rem;
+  --font-heading: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Inter Variable', 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* Custom tokens */
+  --glow-cyan: 0 0 12px rgba(0, 229, 255, 0.4);
+  --glow-teal: 0 0 12px rgba(0, 191, 165, 0.4);
+  --glow-border: rgba(0, 229, 255, 0.25);
+  --panel-bg: rgba(15, 25, 35, 0.95);
+  --grid-color: rgba(0, 229, 255, 0.04);
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono), 'JetBrains Mono', ui-monospace, monospace;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
 }
 
 @layer base {
