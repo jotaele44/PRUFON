@@ -346,6 +346,95 @@
           "tests/test_maintenance.py"
         ]
       }
+    },
+    {
+      "id": "prufon-corpus-consolidation",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Preservation-first inventory, hashing, and resumable consolidation of the legacy PRUFON corpus; this is an operator-controlled data pipeline, not a separate GUI workflow.",
+      "candidate_ids": [
+        "analysis_module:scripts/consolidate_prufon_sources.py",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:allocated_bytes",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:build_record",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:copy_file",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:destination_for",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:is_sparse_or_placeholder",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:iter_source_files",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:main",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:maybe_hash",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:parse_source",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:sha256_file",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:should_exclude",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:write_jsonl",
+        "analysis_symbol:scripts/consolidate_prufon_sources.py:write_summary",
+        "cli_surface:scripts/consolidate_prufon_sources.py"
+      ],
+      "tests": {
+        "backend": [
+          "tests/test_consolidate_prufon_sources.py"
+        ]
+      }
+    },
+    {
+      "id": "fedmil-review-roundtrip",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Schema-validated FEDMIL context export, reviewer queue adjudication, reviewer-identity enforcement, and candidate round-tripping are human-gated federation operations rather than public GUI capabilities.",
+      "candidate_ids": [
+        "analysis_module:scripts/fedmil_context_export.py",
+        "analysis_module:scripts/fedmil_review_queue.py",
+        "analysis_module:scripts/fedmil_roundtrip.py",
+        "analysis_module:scripts/validate_fedmil_context.py",
+        "analysis_symbol:scripts/fedmil_context_export.py:export_assessments",
+        "analysis_symbol:scripts/fedmil_context_export.py:main",
+        "analysis_symbol:scripts/fedmil_review_queue.py:adjudicate",
+        "analysis_symbol:scripts/fedmil_review_queue.py:append_assessment",
+        "analysis_symbol:scripts/fedmil_review_queue.py:build_queue",
+        "analysis_symbol:scripts/fedmil_review_queue.py:load_jsonl",
+        "analysis_symbol:scripts/fedmil_review_queue.py:main",
+        "analysis_symbol:scripts/fedmil_roundtrip.py:enforce_reviewer_identity",
+        "analysis_symbol:scripts/fedmil_roundtrip.py:import_candidates",
+        "analysis_symbol:scripts/fedmil_roundtrip.py:main",
+        "analysis_symbol:scripts/fedmil_roundtrip.py:review_queue",
+        "analysis_symbol:scripts/fedmil_roundtrip.py:write_assessment_roundtrip",
+        "analysis_symbol:scripts/validate_fedmil_context.py:load_jsonl",
+        "analysis_symbol:scripts/validate_fedmil_context.py:main",
+        "analysis_symbol:scripts/validate_fedmil_context.py:validate_assessment",
+        "analysis_symbol:scripts/validate_fedmil_context.py:validate_file",
+        "cli_surface:scripts/fedmil_context_export.py",
+        "cli_surface:scripts/fedmil_review_queue.py",
+        "cli_surface:scripts/fedmil_roundtrip.py",
+        "cli_surface:scripts/validate_fedmil_context.py"
+      ]
+    },
+    {
+      "id": "offline-operator",
+      "classification": "internal",
+      "status": "active",
+      "requires_terminal": false,
+      "rationale": "Offline readiness, blocker, source, validation, export, package, and dashboard orchestration supports release operations; the packaged dashboard remains the user-facing surface.",
+      "candidate_ids": [
+        "analysis_module:scripts/offline_operator.py",
+        "analysis_symbol:scripts/offline_operator.py:dashboard_cmd",
+        "analysis_symbol:scripts/offline_operator.py:export_cmd",
+        "analysis_symbol:scripts/offline_operator.py:git",
+        "analysis_symbol:scripts/offline_operator.py:jread",
+        "analysis_symbol:scripts/offline_operator.py:jwrite",
+        "analysis_symbol:scripts/offline_operator.py:make_blockers",
+        "analysis_symbol:scripts/offline_operator.py:make_readiness",
+        "analysis_symbol:scripts/offline_operator.py:make_sources",
+        "analysis_symbol:scripts/offline_operator.py:now",
+        "analysis_symbol:scripts/offline_operator.py:out",
+        "analysis_symbol:scripts/offline_operator.py:package_cmd",
+        "analysis_symbol:scripts/offline_operator.py:refresh_manifest",
+        "analysis_symbol:scripts/offline_operator.py:repo",
+        "analysis_symbol:scripts/offline_operator.py:run",
+        "analysis_symbol:scripts/offline_operator.py:sha",
+        "analysis_symbol:scripts/offline_operator.py:validate_cmd",
+        "cli_surface:scripts/offline_operator.py"
+      ]
     }
   ],
   "exceptions": []

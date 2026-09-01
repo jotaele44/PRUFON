@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Export OVNIS human assessments of Hub-generated activity candidates."""
+
 from __future__ import annotations
 
 import argparse
@@ -9,7 +10,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from prii_export_utils import sha256
-
 from validate_fedmil_context import validate_file
 
 
@@ -32,9 +32,9 @@ def export_assessments(ledger: Path, out_dir: Path, mode: str, now: str) -> Path
         "sha256": sha256(target),
         "schema_id": "federation_case_activity_assessment.schema.json",
     }
-    digest = hashlib.sha256(
-        f"{target.name}:{file_entry['sha256']}|{mode}".encode()
-    ).hexdigest()[:32]
+    digest = hashlib.sha256(f"{target.name}:{file_entry['sha256']}|{mode}".encode()).hexdigest()[
+        :32
+    ]
     manifest = {
         "package_id": f"pkg_{digest}",
         "producer": "ovnis-pr",
