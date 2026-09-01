@@ -1,7 +1,5 @@
-from pathlib import Path
 import json
-
-import pytest
+from pathlib import Path
 
 import consolidate_prufon_sources as corpus
 
