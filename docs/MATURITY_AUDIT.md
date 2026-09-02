@@ -17,13 +17,15 @@ Scope: this repository only. Cross-repo comparisons live in
 | D2 | Data reality | **4** | 1.1 MB of case data, **zero synthetic-flagged files**; ships a populated 1.5 MB offline snapshot |
 | D3 | UI craft | **2** | 4.8k LOC but **1 page**; 32 `aria-*` and 8 `role=` (good markup); empty states exist inline, but there is no `ErrorBoundary` and no way to tell a failed fetch from an empty result |
 | D4 | Test coverage | **2** | `72 passed` (6.5s), 8 test files — the smallest suite in the federation, though also the smallest codebase |
-| D5 | Engineering hygiene | **1** | JS side is fine (`dashboard/eslint.config.js` + `lint` scripts, clean). Python side has **no `pyproject.toml`, no ruff, no mypy**, and **no lint step of either kind in any of its 7 workflows**. |
+| D5 | Engineering hygiene | **2** | JS side is fine (`dashboard/eslint.config.js` + `lint` scripts, clean). Python side now has `pyproject.toml` with a ruff config, plus a gradually-typed mypy baseline; `.github/workflows/ci.yml`'s `lint` job **gates** `ruff check .`, but its `mypy` step is `continue-on-error: true` (report-only, not yet gating). |
 | D6 | Doc accuracy | **3** | 10 markdown files; `federation.json` is accurate; no drift found |
 
-**Overall: good data and honest markup, with no Python-side engineering scaffolding.** The
-case corpus is real and the UI markup is more accessible than most siblings. What is missing
-is the machinery that keeps the Python half healthy as it grows: no package config, no
-linter, no type checker — and no CI lint gate for either language.
+**Overall: good data and honest markup; Python-side engineering scaffolding is now in place but
+not fully gating.** The case corpus is real and the UI markup is more accessible than most
+siblings. `pyproject.toml` configures ruff and a gradual mypy baseline, and `ci.yml` has a
+dedicated `lint` job that gates `ruff check .` for Python alongside the pre-existing gated
+ESLint step for the dashboard. What remains is promoting mypy from report-only to a gating
+check as its type coverage widens.
 
 ---
 
@@ -50,7 +52,7 @@ linter, no type checker — and no CI lint gate for either language.
 | Item | Why |
 |---|---|
 | Error UX | No `ErrorBoundary`, and `getJSON` converts a failed request to `[]`, so a fetch failure renders as "Queue empty" — indistinguishable from a genuinely empty queue |
-| Python packaging | no `pyproject.toml` at all — the only repo in the federation without one |
+| Python type checking | `mypy` is configured in `pyproject.toml` (gradual baseline scoped to `scripts`/`maintenance`) but wired in `ci.yml` as report-only (`continue-on-error: true`), so it does not yet gate merges |
 
 **DEAD** — none found. This repo ships **no auth UI**, which is the honest posture given a
 backend with no authentication. Its backend also exposes **zero mutating routes** — read-only
@@ -93,7 +95,7 @@ for future comparison: `72 passed` (6.5s); `npm ci && npm run lint && npm run bu
 
 | # | Item | Effort | Why it matters |
 |---|---|---|---|
-| 1 | Add `pyproject.toml` with ruff + mypy config, and a CI lint step for both Python and the existing ESLint | **S** | The single cheapest maturity gain available in the federation. `ruff check .` currently reports 3 findings under default rules — this repo could be clean today and stay clean. `aguayluz-pr`'s config (`E,F,I,B,UP,SIM,W`) is a good template at a comparable size. Note the dashboard already lints clean; it just is not gated. |
+| 1 | Promote the `mypy` CI step from report-only to gating, and widen its `files` scope beyond `scripts`/`maintenance` (e.g. to `server/`) | **S** | `pyproject.toml` now configures ruff (`E,F,I,B,UP,SIM,W`) and a gradual mypy baseline, and `ci.yml`'s `lint` job already gates `ruff check .` and the dashboard's `npm run lint`. The remaining gap is that the `mypy` step is `continue-on-error: true`, so type regressions don't block merges yet. |
 | 2 | Split the dashboard into routed pages | **M** | 4,779 LOC behind one route. `aguayluz-pr` (11 pages) is the closest in-house model. |
 | 3 | Add an `ErrorBoundary` and distinguish errors from empty results | **S** | Empty states already exist inline; the gap is that `getJSON` swallows failures into `[]`, so an outage looks like an empty queue. `centinelas-pr/frontend/src/components/ListState.jsx` models the three-way loading/error/empty split. |
 | 4 | Grow the test suite | **M** | 8 test files / 72 tests for 3.8k LOC. Ratio is not alarming for the size, but it is the federation's thinnest. |
@@ -102,7 +104,7 @@ for future comparison: `72 passed` (6.5s); `npm ci && npm run lint && npm run bu
 
 ---
 
-## Maturity score — 68%
+## Maturity score — 71%
 
 Measured 2026-07-27 against 20 explicit criteria (5 points each, 100 total). Every
 lost point is a specific, verifiable work item, so this doubles as the roadmap.
@@ -113,9 +115,9 @@ lost point is a specific, verifiable work item, so this doubles as the roadmap.
 | Data reality | **20/20** | real non-synthetic dataset · refresh automated · offline bundle populated · live-exec gate open |
 | UI craft | **12/20** | pages proportionate to backend · loading+empty+error everywhere · a11y markup **and** automated gate · single consolidated frontend |
 | Tests | **5/15** | suite green · coverage gate enforced · frontend tests run in CI |
-| Hygiene | **5/15** | linters gated in CI · type checking gated in CI · write surface secured *and* client can use it |
+| Hygiene | **7.5/15** | linters gated in CI · type checking gated in CI · write surface secured *and* client can use it |
 | Docs | **8/10** | docs match code · declared status matches observed maturity |
-| **Total** | **68/100** | |
+| **Total** | **70.5/100** | |
 
 ### How the score is computed
 
@@ -124,7 +126,7 @@ splits cleanly into independent halves — for example "linters gated in CI" sco
 Python and 2.5 for JavaScript, so a repo that gates one and not the other scores 2.5. That
 is why dimension totals are not always multiples of five.
 
-Components here sum to **68** (18 + 20 + 12 + 5 + 5 + 8), reported as **68%**. Half-points are
+Components here sum to **70.5** (18 + 20 + 12 + 5 + 7.5 + 8), reported as **71%**. Half-points are
 rounded **half up** to the nearest whole percent for the cross-repo table; the exact figure is the one
 above.
 
