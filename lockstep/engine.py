@@ -160,8 +160,15 @@ def validate_contracts(baseline: dict[str, Any]) -> dict[str, dict[str, Any]]:
         paths = row.get("paths")
         if not isinstance(paths, list) or not paths or not all(isinstance(p, str) and p for p in paths):
             raise LockstepError(f"contract {contract_id} must declare non-empty paths")
-        if row.get("type") not in {"json_manifest", "json_schema", "export_contract", "event_contract"}:
-            raise LockstepError(f"unsupported contract type for {contract_id}: {row.get('type')!r}")
+        contract_type = row.get("type")
+        if contract_type not in {"json_manifest", "json_schema", "export_contract", "event_contract"}:
+            raise LockstepError(f"unsupported contract type for {contract_id}: {contract_type!r}")
+        if contract_type in {"export_contract", "event_contract"}:
+            semantic_path = row.get("semantic_path")
+            if not isinstance(semantic_path, str) or not semantic_path:
+                raise LockstepError(f"contract {contract_id} must declare semantic_path")
+            if semantic_path not in paths:
+                raise LockstepError(f"contract {contract_id} semantic_path must also be governed by paths")
         by_id[contract_id] = row
     return by_id
 
@@ -390,6 +397,75 @@ def semantic_manifest_diff(before: Any, after: Any) -> dict[str, Any]:
     return {"classification": classification, "changes": changes}
 
 
+def semantic_descriptor_diff(before: Any, after: Any, path: str = "$") -> dict[str, Any]:
+    changes: list[dict[str, str]] = []
+
+    def walk(left: Any, right: Any, current: str) -> None:
+        if type(left) is not type(right):
+            changes.append(
+                {
+                    "classification": "BREAKING",
+                    "detail": f"type changed at {current}: {type(left).__name__} -> {type(right).__name__}",
+                }
+            )
+            return
+        if isinstance(left, dict):
+            for key in sorted(set(left) - set(right)):
+                changes.append(
+                    {"classification": "BREAKING", "detail": f"key removed at {current}.{key}"}
+                )
+            for key in sorted(set(right) - set(left)):
+                changes.append(
+                    {
+                        "classification": "ADDITIVE_COMPATIBLE",
+                        "detail": f"key added at {current}.{key}",
+                    }
+                )
+            for key in sorted(set(left) & set(right)):
+                walk(left[key], right[key], f"{current}.{key}")
+            return
+        if isinstance(left, list):
+            if all(isinstance(value, (str, int, float, bool, type(None))) for value in left + right):
+                left_set = set(left)
+                right_set = set(right)
+                for value in sorted(left_set - right_set, key=repr):
+                    changes.append(
+                        {
+                            "classification": "BREAKING",
+                            "detail": f"list value removed at {current}: {value!r}",
+                        }
+                    )
+                for value in sorted(right_set - left_set, key=repr):
+                    changes.append(
+                        {
+                            "classification": "ADDITIVE_COMPATIBLE",
+                            "detail": f"list value added at {current}: {value!r}",
+                        }
+                    )
+                return
+            if left != right:
+                changes.append(
+                    {
+                        "classification": "MIGRATION_REQUIRED",
+                        "detail": f"structured list changed at {current}",
+                    }
+                )
+            return
+        if left != right:
+            changes.append(
+                {
+                    "classification": "MIGRATION_REQUIRED",
+                    "detail": f"value changed at {current}: {left!r} -> {right!r}",
+                }
+            )
+
+    walk(before, after, path)
+    classification = "NO_CHANGE"
+    if changes:
+        classification = max((change["classification"] for change in changes), key=SEVERITY.__getitem__)
+    return {"classification": classification, "changes": changes}
+
+
 def run_git(args: list[str]) -> str:
     try:
         return subprocess.run(
@@ -422,28 +498,54 @@ def classify_changed_contracts(
     results: dict[str, dict[str, Any]] = {}
     for contract_id in sorted(matched_contracts(changed, contracts)):
         row = contracts[contract_id]
+        contract_type = row["type"]
         paths = [path for path in changed if path_matches(path, row["paths"])]
         contract_results: list[dict[str, Any]] = []
-        for path in paths:
-            contract_type = row["type"]
-            if contract_type in {"json_manifest", "json_schema"}:
+
+        if contract_type in {"export_contract", "event_contract"}:
+            semantic_path = row["semantic_path"]
+            try:
+                before = git_json_at(base_sha, semantic_path)
+                after = git_json_at(head_sha, semantic_path)
+                result = semantic_descriptor_diff(before, after)
+                if result["classification"] == "NO_CHANGE" and paths:
+                    result = {
+                        "classification": "INTERNAL",
+                        "changes": [
+                            f"implementation/evidence changed while canonical signature stayed stable: {', '.join(sorted(paths))}"
+                        ],
+                    }
+                contract_results.append({"path": semantic_path, **result})
+            except LockstepError as exc:
+                contract_results.append(
+                    {
+                        "path": semantic_path,
+                        "classification": "BREAKING",
+                        "changes": [str(exc)],
+                    }
+                )
+        else:
+            for path in paths:
                 try:
                     before = git_json_at(base_sha, path)
                     after = git_json_at(head_sha, path)
                 except LockstepError as exc:
-                    contract_results.append({"path": path, "classification": "BREAKING", "changes": [str(exc)]})
+                    contract_results.append(
+                        {"path": path, "classification": "BREAKING", "changes": [str(exc)]}
+                    )
                     continue
-                result = semantic_schema_diff(before, after) if contract_type == "json_schema" else semantic_manifest_diff(before, after)
+                result = (
+                    semantic_schema_diff(before, after)
+                    if contract_type == "json_schema"
+                    else semantic_manifest_diff(before, after)
+                )
                 contract_results.append({"path": path, **result})
-            else:
-                contract_results.append({
-                    "path": path,
-                    "classification": "UNKNOWN",
-                    "changes": [f"no semantic adapter for {contract_type}"],
-                })
+
         classification = "NO_CHANGE"
         if contract_results:
-            classification = max((x["classification"] for x in contract_results), key=SEVERITY.__getitem__)
+            classification = max(
+                (item["classification"] for item in contract_results), key=SEVERITY.__getitem__
+            )
         results[contract_id] = {"classification": classification, "paths": contract_results}
     return results
 
