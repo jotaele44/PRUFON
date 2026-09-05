@@ -45,9 +45,11 @@ class LockstepRecoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
             partial = Path(tmp) / "receipt.json"
             partial.write_text('{"schema_version":', encoding="utf-8")
-            with patch.object(engine, "RECEIPT_PATH", partial):
-                with self.assertRaises(engine.LockstepError):
-                    engine.validate_all()
+            with (
+                patch.object(engine, "RECEIPT_PATH", partial),
+                self.assertRaises(engine.LockstepError),
+            ):
+                engine.validate_all()
         baseline, contracts, edges, receipt = engine.validate_all()
         self.assertEqual(receipt["generation"], baseline["generation"])
         self.assertTrue(contracts)
@@ -59,9 +61,11 @@ class LockstepRecoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             stale = Path(tmp) / "peer_receipts.json"
             stale.write_text(json.dumps(source), encoding="utf-8")
-            with patch.object(peer_receipts, "PEER_RECEIPTS_PATH", stale):
-                with self.assertRaisesRegex(engine.LockstepError, "LOCKSTEP_DRIFT"):
-                    peer_receipts.validate_peer_receipts()
+            with (
+                patch.object(peer_receipts, "PEER_RECEIPTS_PATH", stale),
+                self.assertRaisesRegex(engine.LockstepError, "LOCKSTEP_DRIFT"),
+            ):
+                peer_receipts.validate_peer_receipts()
         self.assertEqual(peer_receipts.validate_peer_receipts()["status"], "PASS")
 
     def test_baseline_corruption_fails_closed_then_rollback_recovers(self) -> None:
@@ -70,9 +74,11 @@ class LockstepRecoveryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             corrupt = Path(tmp) / "reference_baseline.json"
             corrupt.write_text(json.dumps(source), encoding="utf-8")
-            with patch.object(engine, "BASELINE_PATH", corrupt):
-                with self.assertRaises(engine.LockstepError):
-                    engine.validate_all()
+            with (
+                patch.object(engine, "BASELINE_PATH", corrupt),
+                self.assertRaises(engine.LockstepError),
+            ):
+                engine.validate_all()
         self.assertEqual(engine.validate_all()[0]["generation"], 1)
 
 
