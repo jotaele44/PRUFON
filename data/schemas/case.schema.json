@@ -157,6 +157,9 @@
     },
     "updated_at": {
       "type": ["string", "null"]
+    },
+    "lockstep_reference_note": {
+      "type": ["string", "null"]
     }
   }
 }
