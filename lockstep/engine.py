@@ -17,8 +17,9 @@ import re
 import subprocess
 import sys
 from collections import defaultdict, deque
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCKSTEP_DIR = ROOT / "governance" / "lockstep"
