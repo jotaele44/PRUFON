@@ -51,6 +51,7 @@ jobs:
           tests.test_lockstep_reference
           tests.test_lockstep_strict_gate
           tests.test_lockstep_contract_signatures
+          tests.test_lockstep_deployment_boundary
           -v
 
       - name: Evaluate change under strict Lockstep policy
