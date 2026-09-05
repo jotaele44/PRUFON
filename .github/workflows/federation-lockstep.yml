@@ -43,15 +43,15 @@ jobs:
         run: python -m lockstep.engine validate
 
       - name: Run positive and adversarial reference fixtures
-        run: python -m unittest tests.test_lockstep_reference -v
+        run: python -m unittest tests.test_lockstep_reference tests.test_lockstep_strict_gate -v
 
-      - name: Evaluate change under Lockstep
+      - name: Evaluate change under strict Lockstep policy
         env:
           EVENT_NAME: ${{ github.event_name }}
           BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || (github.event_name == 'push' && github.event.before || inputs.base_sha) }}
           HEAD_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || (github.event_name == 'push' && github.sha || inputs.head_sha) }}
         run: |
-          python -m lockstep.engine gate \
+          python -m lockstep.strict_gate \
             --event-name "$EVENT_NAME" \
             --base-sha "$BASE_SHA" \
             --head-sha "$HEAD_SHA"
