@@ -9,5 +9,10 @@
     "federation_export_manifest@1",
     "ovnis_case_schema@1",
     "centinelas_ovnis_signal@1"
+  ],
+  "impact_set": [
+    "centinelas-pr",
+    "ovnis-pr",
+    "thehub-pr"
   ]
 }
