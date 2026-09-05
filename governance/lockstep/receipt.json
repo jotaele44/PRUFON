@@ -14,5 +14,9 @@
     "centinelas-pr",
     "ovnis-pr",
     "thehub-pr"
-  ]
+  ],
+  "canary": {
+    "id": "breaking-schema-v2",
+    "expected": "BREAKING_REJECT"
+  }
 }
