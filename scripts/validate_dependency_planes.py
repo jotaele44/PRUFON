@@ -14,6 +14,7 @@ DEV_REQUIREMENTS = "requirements-dev.txt"
 RUNTIME_LOCK = "requirements.lock"
 DEV_LOCK = "requirements-dev.lock"
 DESKTOP_CONSTRAINTS = "constraints-desktop.txt"
+FEDERATION_MANIFEST = "federation.json"
 TEST_ONLY = {"pytest", "pytest-cov"}
 _REQUIREMENT_NAME = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)")
 
@@ -42,6 +43,22 @@ def _names(lines: Iterable[str]) -> set[str]:
             raise DependencyPlaneError(f"unrecognized requirement record: {line!r}")
         names.add(match.group(1).lower().replace("_", "-"))
     return names
+
+
+def _commands(root: Path) -> dict[str, str]:
+    path = root / FEDERATION_MANIFEST
+    if not path.is_file():
+        raise DependencyPlaneError(f"required dependency file is missing: {path.name}")
+    try:
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        raise DependencyPlaneError(f"federation.json is not valid JSON: {exc}") from exc
+    commands = manifest.get("hub_callable_commands")
+    if not isinstance(commands, dict) or not all(
+        isinstance(key, str) and isinstance(value, str) for key, value in commands.items()
+    ):
+        raise DependencyPlaneError("federation.json hub_callable_commands must be string pairs")
+    return commands
 
 
 def validate(root: Path = REPO_ROOT) -> dict[str, object]:
@@ -97,6 +114,21 @@ def validate(root: Path = REPO_ROOT) -> dict[str, object]:
             f"desktop constraints contain non-runtime packages: {foreign_desktop}"
         )
 
+    commands = _commands(root)
+    setup = commands.get("setup", "")
+    runtime_setup = commands.get("runtime_setup", "")
+    test_suite = commands.get("test_suite", "")
+    if DEV_LOCK not in setup:
+        raise DependencyPlaneError(
+            f"Hub setup must install the development lock before tests: {DEV_LOCK}"
+        )
+    if RUNTIME_LOCK not in runtime_setup or DEV_LOCK in runtime_setup:
+        raise DependencyPlaneError(
+            f"Hub runtime_setup must install only the runtime lock: {RUNTIME_LOCK}"
+        )
+    if "pytest" not in test_suite:
+        raise DependencyPlaneError("Hub test_suite must execute the declared test runner")
+
     summary: dict[str, object] = {
         "status": "PASS",
         "runtime_direct_count": len(runtime_direct),
@@ -106,6 +138,8 @@ def validate(root: Path = REPO_ROOT) -> dict[str, object]:
         "desktop_constraint_count": len(desktop_constrained),
         "runtime_is_subset_of_development_lock": True,
         "test_packages_in_runtime": 0,
+        "hub_setup_profile_bound": True,
+        "hub_runtime_profile_bound": True,
     }
     return summary
 
