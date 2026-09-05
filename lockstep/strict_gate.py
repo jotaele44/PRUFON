@@ -7,7 +7,7 @@ import json
 import sys
 from typing import Any
 
-from lockstep.engine import LockstepError, gate, load_json, RECEIPT_PATH
+from lockstep.engine import RECEIPT_PATH, LockstepError, gate, load_json
 
 PASS_CLASSES = {
     "NO_CHANGE",
