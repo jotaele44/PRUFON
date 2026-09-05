@@ -42,7 +42,7 @@ class LockstepRecoveryTests(unittest.TestCase):
         self.assertEqual(before, after)
 
     def test_partial_receipt_crash_fails_closed_then_recovers(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory(dir=ROOT) as tmp:
             partial = Path(tmp) / "receipt.json"
             partial.write_text('{"schema_version":', encoding="utf-8")
             with patch.object(engine, "RECEIPT_PATH", partial):
