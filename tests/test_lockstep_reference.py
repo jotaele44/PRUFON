@@ -12,7 +12,6 @@ from lockstep.engine import (
     validate_receipt,
 )
 
-
 SHA_A = "1" * 40
 SHA_B = "2" * 40
 
