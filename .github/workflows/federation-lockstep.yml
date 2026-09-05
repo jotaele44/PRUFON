@@ -42,6 +42,9 @@ jobs:
       - name: Validate Lockstep manifests
         run: python -m lockstep.engine validate
 
+      - name: Validate affected peer receipts
+        run: python -m lockstep.peer_receipts
+
       - name: Run positive and adversarial reference fixtures
         run: >-
           python -m unittest
