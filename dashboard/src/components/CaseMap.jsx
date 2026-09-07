@@ -53,6 +53,34 @@ const DENSITY_FILL_OPACITY = [
   0.7,
 ]
 
+function objectValue(value, field) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${field} must be an object`)
+  return value
+}
+
+function nonNegativeInteger(value, field) {
+  if (!Number.isInteger(value) || value < 0) throw new Error(`${field} must be a non-negative integer`)
+  return value
+}
+
+export function parseCaseDensity(value) {
+  const body = objectValue(value, 'density response')
+  const rawByGeoid = objectValue(body.by_geoid, 'by_geoid')
+  const byGeoid = Object.fromEntries(
+    Object.entries(rawByGeoid).map(([geoid, count]) => [geoid, nonNegativeInteger(count, `by_geoid.${geoid}`)]),
+  )
+  const matchedCount = nonNegativeInteger(body.matched_count, 'matched_count')
+  const unmatchedCount = nonNegativeInteger(body.unmatched, 'unmatched')
+  const totalCases = nonNegativeInteger(body.total_cases, 'total_cases')
+  if (matchedCount !== Object.values(byGeoid).reduce((sum, count) => sum + count, 0)) {
+    throw new Error('matched_count does not equal the by_geoid sum')
+  }
+  if (matchedCount + unmatchedCount !== totalCases) throw new Error('density arithmetic does not close')
+  const scope = objectValue(body.scope, 'scope')
+  if (scope.identity_effect !== 'NONE') throw new Error('density identity_effect must be NONE')
+  return { byGeoid, matchedCount, unmatchedCount, totalCases, scopeState: scope.state ?? 'UNRESOLVED' }
+}
+
 const EMPTY = { type: 'FeatureCollection', features: [] }
 const PR_CENTER = [-66.4, 18.22]
 
@@ -95,13 +123,17 @@ export default function CaseMap({ geojson, onSelect }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const readyRef = useRef(false)
+  const spatialToolActiveRef = useRef(false)
   const onSelectRef = useRef(onSelect)
+  const densityGeoidsRef = useRef(new Set())
   onSelectRef.current = onSelect
   const [showHeatmap, setShowHeatmap] = useState(false)
   const [dateStart, setDateStart] = useState('')
   const [dateEnd, setDateEnd] = useState('')
   const [showTerrain, setShowTerrain] = useState(false)
   const [densityMode, setDensityMode] = useState('off')
+  const [densityState, setDensityState] = useState({ status: 'idle' })
+  const [densityRequest, setDensityRequest] = useState(0)
   const [showTools, setShowTools] = useState(false)
   const [mapReady, setMapReady] = useState(false)
 
@@ -191,10 +223,13 @@ export default function CaseMap({ geojson, onSelect }) {
       setMapReady(true)
       map.on('mouseenter', 'cases-dot', () => (map.getCanvas().style.cursor = 'pointer'))
       map.on('mouseleave', 'cases-dot', () => (map.getCanvas().style.cursor = ''))
-      map.on('click', 'cases-dot', (e) => onSelectRef.current?.(e.features[0].properties))
+      map.on('click', 'cases-dot', (e) => {
+        if (!spatialToolActiveRef.current) onSelectRef.current?.(e.features[0].properties)
+      })
       map.on('mouseenter', 'clusters', () => (map.getCanvas().style.cursor = 'pointer'))
       map.on('mouseleave', 'clusters', () => (map.getCanvas().style.cursor = ''))
       map.on('click', 'clusters', async (e) => {
+        if (spatialToolActiveRef.current) return
         const features = map.queryRenderedFeatures(e.point, { layers: ['clusters'] })
         const clusterId = features[0]?.properties?.cluster_id
         if (clusterId == null) return
@@ -237,28 +272,68 @@ export default function CaseMap({ geojson, onSelect }) {
     map.setPaintProperty('municipios-fill', 'fill-opacity', densityMode === 'density' ? DENSITY_FILL_OPACITY : 0.9)
   }, [densityMode, mapReady])
 
+  const toggleDensity = () => {
+    if (densityMode === 'density') {
+      setDensityMode('off')
+      setDensityState({ status: 'idle' })
+      return
+    }
+    setDensityState({ status: 'loading' })
+    setDensityMode('density')
+  }
+
+  const retryDensity = () => {
+    setDensityState({ status: 'loading' })
+    setDensityRequest((request) => request + 1)
+  }
+
   useEffect(() => {
-    if (!mapReady || !mapRef.current || densityMode !== 'density') return
-    const map = mapRef.current
+    if (densityMode !== 'density') return
     let cancelled = false
     getMunicipiosCaseDensity()
-      .then(({ by_geoid }) => {
+      .then((body) => {
         if (cancelled) return
-        for (const [geoid, count] of Object.entries(by_geoid || {})) {
-          map.setFeatureState({ source: 'municipios', id: geoid }, { case_count: count })
-        }
+        setDensityState({ status: 'ready', data: parseCaseDensity(body) })
       })
-      .catch(() => {}) // an optional overlay failing to load isn't worth surfacing as an error
+      .catch((error) => {
+        if (!cancelled) setDensityState({ status: 'error', message: error instanceof Error ? error.message : String(error) })
+      })
     return () => {
       cancelled = true
     }
-  }, [densityMode, mapReady])
+  }, [densityMode, densityRequest])
+
+  useEffect(() => {
+    if (!mapReady || !mapRef.current) return undefined
+    const map = mapRef.current
+    const densityData = densityState.status === 'ready' ? densityState.data : null
+    const apply = () => {
+      try {
+        for (const geoid of densityGeoidsRef.current) {
+          map.removeFeatureState({ source: 'municipios', id: geoid }, 'case_count')
+        }
+        densityGeoidsRef.current.clear()
+        if (densityMode === 'density' && densityData) {
+          for (const [geoid, count] of Object.entries(densityData.byGeoid)) {
+            map.setFeatureState({ source: 'municipios', id: geoid }, { case_count: count })
+            densityGeoidsRef.current.add(geoid)
+          }
+        }
+      } catch { /* source is still loading; sourcedata retries below */ }
+    }
+    const onSourceData = (event) => {
+      if (event.sourceId === 'municipios' && event.isSourceLoaded) apply()
+    }
+    apply()
+    map.on('sourcedata', onSourceData)
+    return () => map.off('sourcedata', onSourceData)
+  }, [densityMode, densityState, mapReady])
 
   const spatialToolTargets = useMemo(
     () => ({ Cases: () => filteredGeojson.features }),
     [filteredGeojson],
   )
-  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets })
+  const spatialTools = useSpatialTools({ mapRef, mapReady, targets: spatialToolTargets, interactionLockRef: spatialToolActiveRef })
 
   return (
     <div className="relative h-full w-full">
@@ -272,7 +347,7 @@ export default function CaseMap({ geojson, onSelect }) {
             {label}
           </div>
         ))}
-        {densityMode === 'density' && (
+        {densityMode === 'density' && densityState.status === 'ready' && densityState.data.matchedCount > 0 && (
           <>
             <div className="mb-1.5 mt-2 border-t border-slate-800 pt-2 text-[10px] uppercase tracking-wide text-slate-500">Case density</div>
             {[
@@ -311,10 +386,10 @@ export default function CaseMap({ geojson, onSelect }) {
           <button
             type="button"
             aria-pressed={densityMode === 'density'}
-            onClick={() => setDensityMode((m) => (m === 'density' ? 'off' : 'density'))}
+            onClick={toggleDensity}
             className={`rounded border px-2 py-1 text-[11px] transition ${densityMode === 'density' ? 'border-blue-500/40 bg-blue-500/10 text-blue-300' : 'border-slate-800 bg-slate-900/80 text-slate-400 hover:text-slate-200'}`}
           >
-            Density
+            Density{densityMode === 'density' ? ` · ${densityState.status}` : ''}
           </button>
           <button
             type="button"
@@ -325,6 +400,18 @@ export default function CaseMap({ geojson, onSelect }) {
             Spatial tools
           </button>
         </div>
+        {densityMode === 'density' && densityState.status === 'error' && (
+          <div className="max-w-[260px] rounded border border-red-500/40 bg-slate-900/90 px-2 py-1 text-[10px] text-red-300" role="alert">
+            <div>Density unavailable; no zero-case inference was made.</div>
+            <div className="truncate" title={densityState.message}>{densityState.message}</div>
+            <button type="button" onClick={retryDensity} className="text-sky-300 underline">Retry density</button>
+          </div>
+        )}
+        {densityMode === 'density' && densityState.status === 'ready' && (
+          <div className="max-w-[300px] rounded border border-slate-800 bg-slate-900/90 px-2 py-1 text-[10px] text-slate-400" role="status">
+            {densityState.data.matchedCount} matched · {densityState.data.unmatchedCount} unresolved · {densityState.data.totalCases} total · identity effect NONE · {densityState.data.scopeState}
+          </div>
+        )}
         <div className="flex items-center gap-1 rounded border border-slate-800 bg-slate-900/80 px-2 py-1 text-[11px] text-slate-400">
           <input
             type="date"

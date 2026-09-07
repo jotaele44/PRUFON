@@ -8,6 +8,7 @@ disk, including placeholder-only ledgers.
 from __future__ import annotations
 
 import json
+import hashlib
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -345,13 +346,34 @@ def _municipios_features() -> list[dict[str, Any]]:
 
 def _municipios_name_to_geoid(features: list[dict[str, Any]]) -> dict[str, str]:
     mapping: dict[str, str] = {}
+    geoid_to_name: dict[str, str] = {}
     for feature in features:
         props = feature.get("properties") or {}
         name = props.get("name")
         geoid = props.get("geoid")
-        if name and geoid:
-            mapping[name] = str(geoid)
+        if not isinstance(name, str) or not name or geoid in (None, ""):
+            raise ValueError("municipio feature requires non-empty name and geoid")
+        geoid = str(geoid)
+        if name in mapping:
+            raise ValueError(f"duplicate municipio name: {name}")
+        if geoid in geoid_to_name:
+            raise ValueError(f"duplicate municipio geoid: {geoid}")
+        mapping[name] = geoid
+        geoid_to_name[geoid] = name
     return mapping
+
+
+def _source_manifestation(path: Path, row_count: int) -> dict[str, Any]:
+    try:
+        display_path = str(path.relative_to(ROOT))
+    except ValueError:
+        display_path = str(path)
+    return {
+        "path": display_path,
+        "exists": path.exists(),
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest() if path.exists() else None,
+        "row_count": row_count,
+    }
 
 
 def _point_in_ring(lon: float, lat: float, ring: list[list[float]]) -> bool:
@@ -397,27 +419,60 @@ def municipios_case_density() -> dict[str, Any]:
     precise location data instead of leaving the choropleth empty.
     """
     features = _municipios_features()
-    name_to_geoid = _municipios_name_to_geoid(features)
+    try:
+        name_to_geoid = _municipios_name_to_geoid(features)
+    except ValueError as exc:
+        raise HTTPException(500, str(exc)) from exc
     by_geoid: Counter[str] = Counter()
-    unmatched = 0
+    matched_by_method: Counter[str] = Counter()
+    unresolved_by_reason: Counter[str] = Counter()
     cases = all_cases()
     for case in cases:
         name = case.get("municipality") or case.get("municipio")
         geoid = name_to_geoid.get(name) if name else None
+        method = "exact_name" if geoid is not None else None
         if geoid is None:
             lat = as_float(case.get("latitude"))
             lon = as_float(case.get("longitude"))
             if lat is not None and lon is not None:
-                for feature in features:
-                    if _point_in_geometry(lon, lat, feature["geometry"]):
-                        geoid = str((feature.get("properties") or {}).get("geoid"))
-                        break
+                candidates = [
+                    str((feature.get("properties") or {}).get("geoid"))
+                    for feature in features
+                    if _point_in_geometry(lon, lat, feature.get("geometry") or {})
+                ]
+                candidates = [candidate for candidate in candidates if candidate not in ("", "None")]
+                if len(candidates) == 1:
+                    geoid = candidates[0]
+                    method = "point_in_polygon"
+                elif len(candidates) > 1:
+                    unresolved_by_reason["AMBIGUOUS_POINT_IN_POLYGON"] += 1
+                    continue
         if geoid is None:
-            unmatched += 1
+            unresolved_by_reason[
+                "NO_COORDINATES" if as_float(case.get("latitude")) is None or as_float(case.get("longitude")) is None else "OUTSIDE_MUNICIPIOS"
+            ] += 1
             continue
         by_geoid[geoid] += 1
+        matched_by_method[method or "UNRESOLVED_METHOD"] += 1
+    matched_count = sum(by_geoid.values())
+    unmatched = sum(unresolved_by_reason.values())
     return {
         "by_geoid": dict(by_geoid),
+        "matched_count": matched_count,
+        "matched_by_method": dict(matched_by_method),
         "total_cases": len(cases),
         "unmatched": unmatched,
+        "unresolved_by_reason": dict(unresolved_by_reason),
+        "scope": {
+            "identity_effect": "NONE",
+            "binding_effect": "AGGREGATION_ONLY",
+            "name_normalization": "NONE",
+            "geometry_predicate": "point_in_polygon",
+            "state": "CANDIDATE_NOT_IDENTITY" if unmatched else "PASS",
+        },
+        "provenance": {
+            "case_source": _source_manifestation(MASTER_PATH, len(cases)),
+            "municipio_source": _source_manifestation(MUNICIPIOS_PATH, len(features)),
+            "loaded_at": "request_time",
+        },
     }

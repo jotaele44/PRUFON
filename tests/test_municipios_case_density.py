@@ -1,6 +1,7 @@
 """GET /municipios/case_density — name join with a point-in-polygon fallback."""
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -50,6 +51,11 @@ def test_reconciliation_holds_against_real_ledger():
     assert resp.status_code == 200
     body = resp.json()
     assert sum(body["by_geoid"].values()) + body["unmatched"] == body["total_cases"]
+    assert body["matched_count"] == sum(body["by_geoid"].values())
+    assert sum(body["matched_by_method"].values()) == body["matched_count"]
+    assert sum(body["unresolved_by_reason"].values()) == body["unmatched"]
+    assert body["scope"]["identity_effect"] == "NONE"
+    assert body["provenance"]["case_source"]["row_count"] == body["total_cases"]
 
 
 def test_falls_back_to_point_in_polygon_when_name_does_not_match(tmp_path, monkeypatch):
@@ -78,7 +84,9 @@ def test_falls_back_to_point_in_polygon_when_name_does_not_match(tmp_path, monke
     assert resp.status_code == 200
     body = resp.json()
     assert body["by_geoid"] == {"72999": 2}
+    assert body["matched_by_method"] == {"point_in_polygon": 2}
     assert body["unmatched"] == 2
+    assert body["unresolved_by_reason"] == {"OUTSIDE_MUNICIPIOS": 1, "NO_COORDINATES": 1}
     assert body["total_cases"] == 4
 
 
@@ -98,6 +106,7 @@ def test_name_join_takes_priority_over_point_in_polygon(tmp_path, monkeypatch):
     body = resp.json()
     assert body["by_geoid"] == {"72999": 1}
     assert body["unmatched"] == 0
+    assert body["matched_by_method"] == {"exact_name": 1}
 
 
 def test_missing_municipios_file_reports_all_unmatched(tmp_path, monkeypatch):
@@ -114,4 +123,52 @@ def test_missing_municipios_file_reports_all_unmatched(tmp_path, monkeypatch):
     with TestClient(backend.app) as client:
         resp = client.get("/municipios/case_density")
     body = resp.json()
-    assert body == {"by_geoid": {}, "total_cases": 1, "unmatched": 1}
+    assert body["by_geoid"] == {}
+    assert body["matched_count"] == 0
+    assert body["total_cases"] == 1
+    assert body["unmatched"] == 1
+    assert body["unresolved_by_reason"] == {"OUTSIDE_MUNICIPIOS": 1}
+    assert body["provenance"]["municipio_source"]["exists"] is False
+
+
+def test_overlapping_polygon_candidates_remain_unresolved(tmp_path, monkeypatch):
+    backend = _backend()
+    municipio_path = tmp_path / "municipios.geojson"
+    second = json.loads(json.dumps(SQUARE_MUNICIPIO))
+    second["properties"] = {"name": "Second Municipio", "geoid": "72998"}
+    municipio_path.write_text(
+        json.dumps({"type": "FeatureCollection", "features": [SQUARE_MUNICIPIO, second]}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(backend, "MUNICIPIOS_PATH", municipio_path)
+    monkeypatch.setattr(
+        backend,
+        "all_cases",
+        lambda: [{"municipality": None, "latitude": 18.5, "longitude": -66.5}],
+    )
+
+    from starlette.testclient import TestClient
+
+    with TestClient(backend.app) as client:
+        body = client.get("/municipios/case_density").json()
+
+    assert body["by_geoid"] == {}
+    assert body["unresolved_by_reason"] == {"AMBIGUOUS_POINT_IN_POLYGON": 1}
+
+
+@pytest.mark.parametrize(
+    "features",
+    [
+        [
+            {"properties": {"name": "A", "geoid": "1"}},
+            {"properties": {"name": "A", "geoid": "2"}},
+        ],
+        [
+            {"properties": {"name": "A", "geoid": "1"}},
+            {"properties": {"name": "B", "geoid": "1"}},
+        ],
+    ],
+)
+def test_municipio_index_rejects_duplicate_names_and_geoids(features):
+    with pytest.raises(ValueError):
+        _backend()._municipios_name_to_geoid(features)
